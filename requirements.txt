@@ -1,0 +1,37 @@
+# Core
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-dotenv==1.0.0
+
+# Database
+sqlalchemy==2.0.23
+asyncpg==0.29.0
+alembic==1.12.1
+redis==5.0.1
+
+# AWS
+boto3==1.34.0
+botocore==1.34.0
+
+# Messaging & Async
+celery==5.3.4
+pydantic==2.5.0
+pydantic-settings==2.1.0
+websockets==12.0
+
+# Notifications
+slack-sdk==3.27.1
+smtplib
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+moto==4.2.5
+
+# Dashboard
+jinja2==3.1.2
+aiohttp==3.9.1
+
+# CLI
+click==8.1.7
+rich==13.7.0
