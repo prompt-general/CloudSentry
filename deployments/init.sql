@@ -18,11 +18,12 @@ CREATE TABLE findings (
     status VARCHAR(20) DEFAULT 'OPEN' CHECK (status IN ('OPEN', 'IN_PROGRESS', 'RESOLVED', 'SUPPRESSED')),
     
     -- Indexes for common queries
-    INDEX idx_findings_resource (resource_type, resource_id),
-    INDEX idx_findings_severity (severity),
-    INDEX idx_findings_timestamp (timestamp),
-    INDEX idx_findings_account (account_id)
 );
+
+CREATE INDEX idx_findings_resource ON findings (resource_type, resource_id);
+CREATE INDEX idx_findings_severity ON findings (severity);
+CREATE INDEX idx_findings_timestamp ON findings (timestamp);
+CREATE INDEX idx_findings_account ON findings (account_id);
 
 -- Events table (normalized events)
 CREATE TABLE events (
@@ -42,6 +43,10 @@ CREATE TABLE events (
     INDEX idx_events_resource (resource_type, resource_id),
     INDEX idx_events_account (account_id)
 );
+
+CREATE INDEX idx_events_event_time ON events (event_time);
+CREATE INDEX idx_events_resource ON events (resource_type, resource_id);
+CREATE INDEX idx_events_account ON events (account_id);
 
 -- Rules metadata table
 CREATE TABLE rules (
