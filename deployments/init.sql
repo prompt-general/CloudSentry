@@ -15,9 +15,7 @@ CREATE TABLE findings (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     account_id VARCHAR(50),
     region VARCHAR(50),
-    status VARCHAR(20) DEFAULT 'OPEN' CHECK (status IN ('OPEN', 'IN_PROGRESS', 'RESOLVED', 'SUPPRESSED')),
-    
-    -- Indexes for common queries
+    status VARCHAR(20) DEFAULT 'OPEN' CHECK (status IN ('OPEN', 'IN_PROGRESS', 'RESOLVED', 'SUPPRESSED'))
 );
 
 CREATE INDEX idx_findings_resource ON findings (resource_type, resource_id);
@@ -37,11 +35,7 @@ CREATE TABLE events (
     account_id VARCHAR(50) NOT NULL,
     region VARCHAR(50) NOT NULL,
     raw_event JSONB,
-    processed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    
-    INDEX idx_events_event_time (event_time),
-    INDEX idx_events_resource (resource_type, resource_id),
-    INDEX idx_events_account (account_id)
+    processed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_events_event_time ON events (event_time);
