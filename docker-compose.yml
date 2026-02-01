@@ -40,6 +40,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://cloudsentry:changeme@postgres:5432/cloudsentry
       - REDIS_URL=redis://redis:6379/0
+      - WEBSOCKET_ENABLED=true
       - AWS_REGION=${AWS_REGION}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
