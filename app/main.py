@@ -8,6 +8,7 @@ from app.database import get_db, AsyncSessionLocal
 from app.api import rest, websocket
 from app.engine.event_ingestor import start_event_ingestor
 from app.scheduler.audit_scheduler import init_scheduler
+from app.api.websocket import start_websocket_manager
 
 # Configure logging
 logging.basicConfig(
@@ -31,6 +32,9 @@ async def lifespan(app: FastAPI):
     
     # Start event ingestor in background
     await start_event_ingestor()
+    
+    # Start WebSocket manager
+    await start_websocket_manager()
     
     yield
     
