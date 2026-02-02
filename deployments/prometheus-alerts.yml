@@ -1,0 +1,291 @@
+groups:
+  - name: cloudsentry_alerts
+    rules:
+      - alert: CloudSentryAPIDown
+        expr: up{job="cloudsentry"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: cloudsentry
+          component: api
+        annotations:
+          summary: "CloudSentry API is down"
+          description: "CloudSentry API has been down for more than 1 minute on {{ $labels.instance }}"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/api-down"
+      
+      - alert: HighErrorRate
+        expr: rate(http_request_duration_seconds_count{status=~"5.."}[5m]) / rate(http_request_duration_seconds_count[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+          service: cloudsentry
+          component: api
+        annotations:
+          summary: "High error rate on CloudSentry API"
+          description: "Error rate is {{ $value | humanizePercentage }} for 2 minutes on {{ $labels.instance }}"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/high-error-rate"
+      
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 2m
+        labels:
+          severity: warning
+          service: cloudsentry
+          component: api
+        annotations:
+          summary: "High latency on CloudSentry API"
+          description: "95th percentile latency is {{ $value }}s for 2 minutes on {{ $labels.instance }}"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/high-latency"
+      
+      - alert: DatabaseHighConnections
+        expr: pg_stat_database_numbackends{datname="cloudsentry"} > 50
+        for: 2m
+        labels:
+          severity: warning
+          service: cloudsentry
+          component: database
+        annotations:
+          summary: "High database connections"
+          description: "Database connections are {{ $value }} (threshold: 50) for 2 minutes on {{ $labels.instance }}"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/database-connections"
+      
+      - alert: DatabaseDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: cloudsentry
+          component: database
+        annotations:
+          summary: "PostgreSQL database is down"
+          description: "PostgreSQL database has been down for more than 1 minute on {{ $labels.instance }}"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/database-down"
+      
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: cloudsentry
+          component: cache
+        annotations:
+          summary: "Redis cache is down"
+          description: "Redis cache has been down for more than 1 minute on {{ $labels.instance }}"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/redis-down"
+      
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: cloudsentry
+          component: cache
+        annotations:
+          summary: "Redis memory usage high"
+          description: "Redis memory usage is {{ $value | humanizePercentage }} for 5 minutes on {{ $labels.instance }}"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/redis-memory"
+      
+      - alert: FindingSpike
+        expr: rate(findings_created_total[5m]) > 10
+        for: 1m
+        labels:
+          severity: warning
+          service: cloudsentry
+          component: security
+        annotations:
+          summary: "Spike in security findings"
+          description: "More than 10 findings per minute detected (current: {{ $value }})"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/finding-spike"
+      
+      - alert: CriticalFindings
+        expr: findings_by_severity{severity="CRITICAL"} > 0
+        for: 0m
+        labels:
+          severity: critical
+          service: cloudsentry
+          component: security
+        annotations:
+          summary: "Critical security findings detected"
+          description: "There are {{ $value }} critical security findings that need immediate attention"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/critical-findings"
+      
+      - alert: HighFindingsRate
+        expr: rate(findings_created_total[15m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: cloudsentry
+          component: security
+        annotations:
+          summary: "High rate of security findings"
+          description: "Security findings rate is {{ $value }} per minute for 5 minutes"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/high-findings-rate"
+      
+      - alert: DiskSpaceHigh
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 10
+        for: 5m
+        labels:
+          severity: warning
+          service: cloudsentry
+          component: infrastructure
+        annotations:
+          summary: "Low disk space"
+          description: "Disk space is {{ $value }}% available on {{ $labels.instance }}:{{ $labels.mountpoint }}"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/disk-space"
+      
+      - alert: MemoryUsageHigh
+        expr: (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 < 10
+        for: 5m
+        labels:
+          severity: warning
+          service: cloudsentry
+          component: infrastructure
+        annotations:
+          summary: "High memory usage"
+          description: "Available memory is {{ $value }}% on {{ $labels.instance }}"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/memory-usage"
+      
+      - alert: CPUUsageHigh
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: cloudsentry
+          component: infrastructure
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }} for 5 minutes"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/cpu-usage"
+      
+      - alert: ContainerDown
+        expr: container_last_seen{container_label_com_docker_compose_service!=""} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: cloudsentry
+          component: containers
+        annotations:
+          summary: "Container is down"
+          description: "Container {{ $labels.container_label_com_docker_compose_service }} is down on {{ $labels.instance }}"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/container-down"
+      
+      - alert: ContainerRestartHigh
+        expr: increase(container_start_time_seconds{container_label_com_docker_compose_service!=""}[1h]) > 5
+        for: 0m
+        labels:
+          severity: warning
+          service: cloudsentry
+          component: containers
+        annotations:
+          summary: "High container restart rate"
+          description: "Container {{ $labels.container_label_com_docker_compose_service }} has restarted {{ $value }} times in the last hour"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/container-restarts"
+      
+      - alert: SSLCertificateExpiring
+        expr: probe_ssl_earliest_cert_expiry - time() < 86400 * 7
+        for: 0m
+        labels:
+          severity: warning
+          service: cloudsentry
+          component: security
+        annotations:
+          summary: "SSL certificate expiring soon"
+          description: "SSL certificate for {{ $labels.instance }} expires in {{ $value | humanizeDuration }}"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/ssl-certificate"
+      
+      - alert: BackupFailed
+        expr: backup_last_success_timestamp == 0 or time() - backup_last_success_timestamp > 86400
+        for: 0m
+        labels:
+          severity: critical
+          service: cloudsentry
+          component: backup
+        annotations:
+          summary: "Backup failed or missing"
+          description: "Last successful backup was {{ $value | humanizeDuration }} ago or never completed"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/backup-failed"
+      
+      - alert: AuditJobFailed
+        expr: audit_job_success == 0
+        for: 5m
+        labels:
+          severity: warning
+          service: cloudsentry
+          component: audit
+        annotations:
+          summary: "Security audit job failed"
+          description: "Security audit job has been failing for 5 minutes on {{ $labels.instance }}"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/audit-job-failed"
+      
+      - alert: EventProcessingLag
+        expr: event_processing_lag_seconds > 300
+        for: 5m
+        labels:
+          severity: warning
+          service: cloudsentry
+          component: processing
+        annotations:
+          summary: "Event processing lag"
+          description: "Event processing is lagging by {{ $value }} seconds on {{ $labels.instance }}"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/event-processing-lag"
+      
+      - alert: QueueBacklog
+        expr: celery_queue_length > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: cloudsentry
+          component: queue
+        annotations:
+          summary: "High queue backlog"
+          description: "Queue {{ $labels.queue_name }} has {{ $value }} items pending"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/queue-backlog"
+      
+      - alert: WorkerDown
+        expr: celery_workers_active == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: cloudsentry
+          component: workers
+        annotations:
+          summary: "No active Celery workers"
+          description: "No active Celery workers detected for 2 minutes on {{ $labels.instance }}"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/worker-down"
+      
+      - alert: GrafanaDown
+        expr: up{job="grafana"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: cloudsentry
+          component: monitoring
+        annotations:
+          summary: "Grafana is down"
+          description: "Grafana monitoring dashboard has been down for 2 minutes"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/grafana-down"
+      
+      - alert: PrometheusDown
+        expr: up{job="prometheus"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: cloudsentry
+          component: monitoring
+        annotations:
+          summary: "Prometheus is down"
+          description: "Prometheus monitoring system has been down for 1 minute"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/prometheus-down"
+      
+      - alert: LokiDown
+        expr: up{job="loki"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: cloudsentry
+          component: logging
+        monitoring: "true"
+        annotations:
+          summary: "Loki log aggregation is down"
+          description: "Loki log aggregation system has been down for 2 minutes"
+          runbook_url: "https://docs.cloudsentry.com/runbooks/loki-down"
