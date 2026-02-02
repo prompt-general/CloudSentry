@@ -38,7 +38,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://cloudsentry:changeme@postgres:5432/cloudsentry
+      - DATABASE_URL=postgresql+asyncpg://cloudsentry:changeme@postgres:5432/cloudsentry
       - REDIS_URL=redis://redis:6379/0
       - WEBSOCKET_ENABLED=true
       - AWS_REGION=${AWS_REGION}

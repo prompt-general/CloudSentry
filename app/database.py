@@ -27,10 +27,6 @@ AsyncSessionLocal = sessionmaker(
     expire_on_commit=False
 )
 
-# Synchronous engine for migrations and sync operations
-SYNC_DATABASE_URL = DATABASE_URL.replace("asyncpg", "psycopg2").replace("+asyncpg", "")
-sync_engine = create_engine(SYNC_DATABASE_URL)
-
 # Dependency to get DB session
 async def get_db():
     async with AsyncSessionLocal() as session:
