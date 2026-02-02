@@ -11,6 +11,7 @@ from app.config import get_settings
 from app.database import AsyncSessionLocal
 from app.models import Event
 from app.engine.rule_engine import RuleEngine
+from app.aws.organizations import AWSOrganizationsManager
 
 logger = logging.getLogger(__name__)
 
@@ -98,15 +99,16 @@ class CloudTrailNormalizer:
 
 
 class EventIngestor:
-    """Ingests AWS CloudTrail events from multiple sources"""
+    """Ingests AWS CloudTrail events from multiple accounts"""
     
     def __init__(self):
         self.settings = get_settings()
         self.running = False
         self.rule_engine = RuleEngine()
+        self.org_manager = AWSOrganizationsManager()
         
-        # Initialize AWS clients
-        self.aws_session = boto3.Session(
+        # Initialize master session
+        self.master_session = boto3.Session(
             region_name=self.settings.aws_region,
             aws_access_key_id=self.settings.aws_access_key_id,
             aws_secret_access_key=self.settings.aws_secret_access_key
@@ -131,7 +133,7 @@ class EventIngestor:
             logger.info("Starting EventBridge event ingestion...")
             
             # Create a mock EventBridge client for testing
-            eventbridge_client = self.aws_session.client('events')
+            eventbridge_client = self.master_session.client('events')
             
             # List rules to verify connection
             try:
