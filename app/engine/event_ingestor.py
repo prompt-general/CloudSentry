@@ -155,7 +155,7 @@ class EventIngestor:
         try:
             logger.info("Starting SQS event ingestion...")
             
-            sqs_client = self.aws_session.client('sqs')
+            sqs_client = self.master_session.client('sqs')
             
             if not self.settings.sqs_queue_url:
                 logger.warning("No SQS queue URL configured, using test events")
@@ -183,6 +183,75 @@ class EventIngestor:
                     
         except Exception as e:
             logger.error(f"Error in SQS ingestion: {e}")
+    
+    async def setup_cross_account_eventbridge(self):
+        """Set up cross-account EventBridge rules"""
+        try:
+            eventbridge_client = self.master_session.client('events')
+            accounts = await self.org_manager.get_all_accounts()
+            
+            # Create EventBridge rule for each account
+            for account in accounts:
+                if account['id'] == 'master':
+                    continue
+                
+                rule_name = f"CloudSentry-{account['id']}-CloudTrail"
+                
+                try:
+                    # Check if rule exists
+                    eventbridge_client.describe_rule(Name=rule_name)
+                    logger.info(f"EventBridge rule already exists for account {account['id']}")
+                    
+                except eventbridge_client.exceptions.ResourceNotFoundException:
+                    # Create rule to capture security events
+                    event_pattern = {
+                        "source": ["aws.cloudtrail"],
+                        "detail-type": ["AWS API Call via CloudTrail"],
+                        "detail": {
+                            "eventSource": [
+                                "s3.amazonaws.com",
+                                "ec2.amazonaws.com",
+                                "iam.amazonaws.com",
+                                "rds.amazonaws.com",
+                                "lambda.amazonaws.com",
+                                "secretsmanager.amazonaws.com"
+                            ]
+                        }
+                    }
+                    
+                    # Create rule
+                    eventbridge_client.put_rule(
+                        Name=rule_name,
+                        EventPattern=json.dumps(event_pattern),
+                        State='ENABLED',
+                        Description=f"CloudSentry security events for account {account['id']}",
+                        EventBusName=self.settings.event_bridge_bus
+                    )
+                    
+                    # Add target (send to CloudSentry)
+                    eventbridge_client.put_targets(
+                        Rule=rule_name,
+                        EventBusName=self.settings.event_bridge_bus,
+                        Targets=[{
+                            'Id': 'CloudSentry',
+                            'Arn': f"arn:aws:sqs:{self.settings.aws_region}:{self.org_manager._get_master_account_id()}:{self.settings.sqs_queue_name}",
+                            'InputTransformer': {
+                                'InputPathsMap': {
+                                    'account': '$.account',
+                                    'detail': '$.detail'
+                                },
+                                'InputTemplate': json.dumps({
+                                    'account': '<account>',
+                                    'detail': '<detail>'
+                                })
+                            }
+                        }]
+                    )
+                    
+                    logger.info(f"Created EventBridge rule for account {account['id']}")
+                    
+        except Exception as e:
+            logger.error(f"Error setting up cross-account EventBridge: {e}")
     
     async def _process_sqs_message(self, message: Dict[str, Any], sqs_client):
         """Process a single SQS message"""
