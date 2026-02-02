@@ -662,3 +662,110 @@ async def get_audits(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error fetching audits"
         )
+
+
+@router.get("/accounts", response_model=List[Dict[str, Any]])
+async def get_accounts(
+    db: AsyncSession = Depends(get_db),
+    include_summary: bool = Query(False)
+):
+    """
+    Get all AWS accounts being monitored
+    """
+    try:
+        # Get account list from Organizations
+        from app.aws.organizations import AWSOrganizationsManager
+        org_manager = AWSOrganizationsManager()
+        accounts = await org_manager.get_all_accounts()
+        
+        if include_summary:
+            # Get summary for each account
+            for account in accounts:
+                query = select(func.count(Finding.id)).where(
+                    Finding.account_id == account['id']
+                )
+                result = await db.execute(query)
+                account['findings_count'] = result.scalar() or 0
+                
+                # Get critical findings count
+                crit_query = select(func.count(Finding.id)).where(
+                    and_(
+                        Finding.account_id == account['id'],
+                        Finding.severity == 'CRITICAL'
+                    )
+                )
+                crit_result = await db.execute(crit_query)
+                account['critical_findings'] = crit_result.scalar() or 0
+        
+        return accounts
+        
+    except Exception as e:
+        logger.error(f"Error fetching accounts: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error fetching accounts"
+        )
+
+
+@router.get("/accounts/{account_id}/summary")
+async def get_account_summary(
+    account_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get detailed summary for a specific account
+    """
+    try:
+        # Total findings
+        total_query = select(func.count(Finding.id)).where(
+            Finding.account_id == account_id
+        )
+        total_result = await db.execute(total_query)
+        total = total_result.scalar() or 0
+        
+        # By severity
+        severity_query = select(
+            Finding.severity,
+            func.count(Finding.id).label('count')
+        ).where(
+            Finding.account_id == account_id
+        ).group_by(Finding.severity)
+        
+        severity_result = await db.execute(severity_query)
+        by_severity = {s.severity: s.count for s in severity_result.all()}
+        
+        # By resource type
+        resource_query = select(
+            Finding.resource_type,
+            func.count(Finding.id).label('count')
+        ).where(
+            Finding.account_id == account_id
+        ).group_by(Finding.resource_type)
+        
+        resource_result = await db.execute(resource_query)
+        by_resource = {r.resource_type: r.count for r in resource_result.all()}
+        
+        # Recent findings (last 7 days)
+        recent_query = select(func.count(Finding.id)).where(
+            and_(
+                Finding.account_id == account_id,
+                Finding.timestamp >= datetime.utcnow() - timedelta(days=7)
+            )
+        )
+        recent_result = await db.execute(recent_query)
+        recent = recent_result.scalar() or 0
+        
+        return {
+            'account_id': account_id,
+            'total_findings': total,
+            'recent_findings': recent,
+            'by_severity': by_severity,
+            'by_resource': by_resource
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching account summary: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error fetching account summary"
+        )
