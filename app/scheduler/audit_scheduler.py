@@ -13,17 +13,19 @@ from app.engine.rule_engine import RuleEngine
 from app.engine.rules.s3_rules import S3BucketPublicReadRule, S3BucketEncryptionRule
 from app.engine.rules.ec2_rules import EC2SecurityGroupOpenSSHRule, EC2SecurityGroupOpenRDPRule
 from app.config import get_settings
+from app.aws.organizations import AWSOrganizationsManager
 
 logger = logging.getLogger(__name__)
 
 class AuditScheduler:
-    """Scheduler for periodic security audits"""
+    """Scheduler for periodic security audits across multiple accounts"""
     
     def __init__(self):
         self.settings = get_settings()
         self.rule_engine = RuleEngine()
         self.running = False
         self.audit_tasks = {}
+        self.org_manager = AWSOrganizationsManager()
         
         # Initialize AWS session
         self.aws_session = boto3.Session(
@@ -257,14 +259,93 @@ class AuditScheduler:
             
             return findings_count
             
-        except Exception as e:
-            logger.error(f"Error in IAM audit: {e}")
-            return 0
-    
-    async def run_targeted_audit(self, resource_ids: List[str], resource_type: str):
-        """Run audit on specific resources"""
-        # Implementation for targeted audits
-        pass
+    except Exception as e:
+        logger.error(f"Error in IAM audit: {e}")
+        return 0
+
+async def run_targeted_audit(self, resource_ids: List[str], resource_type: str):
+    """Run audit on specific resources"""
+    # Implementation for targeted audits
+    pass
+
+async def run_multi_account_full_audit(self):
+    """Run full audit across all accounts in the organization"""
+    try:
+        accounts = await self.org_manager.get_all_accounts()
+        audit_results = []
+            
+        logger.info(f"Starting multi-account audit for {len(accounts)} accounts")
+            
+        # Run audits in parallel with limits
+        semaphore = asyncio.Semaphore(3)  # Limit to 3 concurrent audits
+            
+        async def audit_account(account):
+            async with semaphore:
+                try:
+                    account_id = account.get('id')
+                    account_name = account.get('name', account_id)
+                        
+                    logger.info(f"Starting audit for account: {account_name}")
+                        
+                    audit_id = await self.run_full_audit(account_id=account_id)
+                        
+                    return {
+                        'account_id': account_id,
+                        'account_name': account_name,
+                        'audit_id': audit_id,
+                        'status': 'COMPLETED'
+                    }
+                        
+                except Exception as e:
+                    logger.error(f"Audit failed for account {account.get('id')}: {e}")
+                    return {
+                        'account_id': account.get('id'),
+                        'account_name': account.get('name', account.get('id')),
+                        'error': str(e),
+                        'status': 'FAILED'
+                    }
+            
+        # Create tasks for all accounts
+        tasks = [audit_account(account) for account in accounts]
+        audit_results = await asyncio.gather(*tasks, return_exceptions=True)
+            
+        # Process results
+        successful = sum(1 for r in audit_results if isinstance(r, dict) and r.get('status') == 'COMPLETED')
+        failed = len(audit_results) - successful
+            
+        logger.info(f"Multi-account audit completed: {successful} successful, {failed} failed")
+            
+        # Send summary notification
+        await self._send_multi_account_audit_summary(audit_results)
+            
+        return audit_results
+            
+    except Exception as e:
+        logger.error(f"Error in multi-account audit: {e}")
+        return []
+
+async def _send_multi_account_audit_summary(self, audit_results):
+    """Send summary of multi-account audit"""
+    try:
+        summary = {
+            'total_accounts': len(audit_results),
+            'successful': sum(1 for r in audit_results if r.get('status') == 'COMPLETED'),
+            'failed': sum(1 for r in audit_results if r.get('status') == 'FAILED'),
+            'timestamp': datetime.utcnow().isoformat(),
+            'results': audit_results
+        }
+            
+        # Send via notification engine
+        from app.notifier import notify_audit_result
+        await notify_audit_result({
+            'audit_type': 'multi_account',
+            'status': 'COMPLETED',
+            'findings_count': sum(r.get('findings_count', 0) for r in audit_results if isinstance(r, dict)),
+            'summary': summary
+        })
+            
+    except Exception as e:
+        logger.error(f"Error sending multi-account audit summary: {e}")
 
 
 # Global scheduler instance
