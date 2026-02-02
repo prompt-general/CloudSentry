@@ -11,6 +11,7 @@ from app.config import get_settings
 from app.database import AsyncSessionLocal
 from app.models import Finding
 from app.notifier import notify_new_finding
+from app.aws.organizations import AWSOrganizationsManager
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,7 @@ class Rule(ABC):
         self.description = description
         self.severity = severity
         self.settings = get_settings()
+        self.org_manager = AWSOrganizationsManager()
         
         # AWS session for this rule
         self.aws_session = boto3.Session(
@@ -35,15 +37,67 @@ class Rule(ABC):
         """Evaluate the event and resource state for security issues"""
         pass
     
-    def get_aws_client(self, service_name: str):
-        """Get an AWS client for the given service"""
-        return self.aws_session.client(service_name)
+    def get_aws_client(self, account_id: str, service_name: str, region: str = None):
+        """Get an AWS client for a specific account and region"""
+        try:
+            # Get session for the account
+            session = asyncio.run(self.org_manager.get_account_session(account_id))
+            
+            # Use provided region or default
+            client_region = region or self.settings.aws_region
+            
+            return session.client(service_name, region_name=client_region)
+            
+        except Exception as e:
+            logger.error(f"Error getting AWS client for account {account_id}: {e}")
+            # Fall back to master account
+            return self.aws_session.client(service_name, region_name=region or self.settings.aws_region)
     
     async def fetch_resource_state(self, event: Dict[str, Any]) -> Dict[str, Any]:
         """Fetch the current state of the affected resource"""
-        # Base implementation returns empty state
-        # Override in specific rules if needed
-        return {}
+        account_id = event.get('account_id', 'master')
+        resource_state = {'account_id': account_id}
+        
+        try:
+            if event.get('resource_type') == 's3':
+                bucket_name = event.get('resource_id')
+                if bucket_name:
+                    s3_client = self.get_aws_client(account_id, 's3')
+                    
+                    # Get bucket policy
+                    try:
+                        policy_response = s3_client.get_bucket_policy(Bucket=bucket_name)
+                        resource_state['policy'] = policy_response.get('Policy')
+                    except s3_client.exceptions.NoSuchBucketPolicy:
+                        resource_state['policy'] = None
+                    except Exception as e:
+                        logger.error(f"Error getting bucket policy: {e}")
+                        resource_state['policy'] = None
+                    
+                    # Get bucket ACL
+                    try:
+                        acl_response = s3_client.get_bucket_acl(Bucket=bucket_name)
+                        resource_state['acl'] = acl_response
+                    except Exception as e:
+                        logger.error(f"Error getting bucket ACL: {e}")
+                        resource_state['acl'] = None
+            
+            elif event.get('resource_type') == 'security-group':
+                sg_id = event.get('resource_id')
+                if sg_id:
+                    ec2_client = self.get_aws_client(account_id, 'ec2', event.get('region'))
+                    
+                    try:
+                        response = ec2_client.describe_security_groups(GroupIds=[sg_id])
+                        resource_state['security_group'] = response.get('SecurityGroups', [])[0] if response.get('SecurityGroups') else None
+                    except Exception as e:
+                        logger.error(f"Error getting security group: {e}")
+                        resource_state['security_group'] = None
+        
+        except Exception as e:
+            logger.error(f"Error fetching resource state: {e}")
+        
+        return resource_state
 
 
 class RuleEngine:
