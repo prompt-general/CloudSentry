@@ -20,17 +20,57 @@ import {
   Select,
   MenuItem,
   Alert,
-  CircularProgress
+  CircularProgress,
+  Tabs,
+  Tab,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Avatar,
+  Badge
 } from '@mui/material';
 import {
   Security as SecurityIcon,
   Warning as WarningIcon,
   CheckCircle as CheckCircleIcon,
-  Error as ErrorIcon
+  Error as ErrorIcon,
+  ExpandMore as ExpandMoreIcon,
+  AccountTree as AccountTreeIcon,
+  AccountBalance as AccountBalanceIcon
 } from '@mui/icons-material';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { API_BASE_URL, fetchFindings, fetchSummary, fetchRules, websocketConnect } from './api';
 import './App.css';
+
+// Add account selector component
+function AccountSelector({ accounts, selectedAccounts, onAccountToggle }) {
+  return (
+    <Paper sx={{ p: 2, mb: 3 }}>
+      <Typography variant="h6" gutterBottom>
+        <AccountTreeIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+        AWS Accounts
+      </Typography>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+        <Chip
+          label="All Accounts"
+          color={selectedAccounts.includes('all') ? 'primary' : 'default'}
+          onClick={() => onAccountToggle('all')}
+          variant={selectedAccounts.includes('all') ? 'filled' : 'outlined'}
+        />
+        {accounts.map(account => (
+          <Chip
+            key={account.id}
+            label={`${account.name} (${account.id})`}
+            color={selectedAccounts.includes(account.id) ? 'primary' : 'default'}
+            onClick={() => onAccountToggle(account.id)}
+            avatar={<Avatar>{account.name.charAt(0)}</Avatar>}
+            variant={selectedAccounts.includes(account.id) ? 'filled' : 'outlined'}
+          />
+        ))}
+      </Box>
+    </Paper>
+  );
+}
 
 function App() {
   const [findings, setFindings] = useState([]);
@@ -42,12 +82,66 @@ function App() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [severityFilter, setSeverityFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [accounts, setAccounts] = useState([]);
+  const [selectedAccounts, setSelectedAccounts] = useState(['all']);
+  const [accountSummary, setAccountSummary] = useState({});
 
   // Load initial data
   useEffect(() => {
+    loadAccounts();
     loadData();
     setupWebSocket();
   }, []);
+
+  const loadAccounts = async () => {
+    try {
+      // In production, this would call an API endpoint
+      // For now, use mock data
+      const mockAccounts = [
+        { id: '123456789012', name: 'Production', status: 'ACTIVE' },
+        { id: '234567890123', name: 'Staging', status: 'ACTIVE' },
+        { id: '345678901234', name: 'Development', status: 'ACTIVE' }
+      ];
+      setAccounts(mockAccounts);
+      
+      // Load account-specific summaries
+      loadAccountSummaries(mockAccounts);
+    } catch (err) {
+      console.error('Error loading accounts:', err);
+    }
+  };
+
+  const loadAccountSummaries = async (accounts) => {
+    const summaries = {};
+    for (const account of accounts) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/findings/stats/summary?account_id=${account.id}`);
+        const data = await response.json();
+        summaries[account.id] = data;
+      } catch (err) {
+        console.error(`Error loading summary for account ${account.id}:`, err);
+      }
+    }
+    setAccountSummary(summaries);
+  };
+
+  const handleAccountToggle = (accountId) => {
+    if (accountId === 'all') {
+      setSelectedAccounts(['all']);
+    } else {
+      const newSelection = selectedAccounts.includes('all') 
+        ? [accountId]
+        : selectedAccounts.includes(accountId)
+          ? selectedAccounts.filter(id => id !== accountId)
+          : [...selectedAccounts, accountId];
+      
+      if (newSelection.length === 0) {
+        setSelectedAccounts(['all']);
+      } else {
+        setSelectedAccounts(newSelection);
+      }
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -112,6 +206,7 @@ function App() {
   const filteredFindings = findings.filter(finding => {
     if (severityFilter !== 'all' && finding.severity !== severityFilter) return false;
     if (statusFilter !== 'all' && finding.status !== statusFilter) return false;
+    if (selectedAccounts.length > 0 && !selectedAccounts.includes('all') && !selectedAccounts.includes(finding.account_id)) return false;
     return true;
   });
 
@@ -270,6 +365,59 @@ function App() {
           </Paper>
         </Grid>
       </Grid>
+
+      {/* Add account selector */}
+      <AccountSelector
+        accounts={accounts}
+        selectedAccounts={selectedAccounts}
+        onAccountToggle={handleAccountToggle}
+      />
+
+      {/* Add account breakdown section */}
+      {accounts.length > 0 && (
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          {accounts.map(account => {
+            const summary = accountSummary[account.id] || {};
+            return (
+              <Grid item xs={12} sm={6} md={4} key={account.id}>
+                <Card>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <AccountBalanceIcon sx={{ mr: 1 }} />
+                      <Typography variant="h6" component="div">
+                        {account.name}
+                      </Typography>
+                    </Box>
+                    <Typography color="text.secondary" gutterBottom>
+                      {account.id}
+                    </Typography>
+                    <Box sx={{ mt: 2 }}>
+                      <Grid container spacing={1}>
+                        <Grid item xs={6}>
+                          <Typography variant="body2" color="text.secondary">
+                            Findings
+                          </Typography>
+                          <Typography variant="h6">
+                            {summary.total || 0}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="body2" color="text.secondary">
+                            Critical
+                          </Typography>
+                          <Typography variant="h6" sx={{ color: '#ff0000' }}>
+                            {summary.by_severity?.CRITICAL || 0}
+                          </Typography>
+                        </Grid>
+                      </Grid>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
+          })}
+        </Grid>
+      )}
 
       {/* Filters */}
       <Paper sx={{ p: 2, mb: 3 }}>
