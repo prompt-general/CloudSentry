@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import List, Dict, Any, Optional
 import boto3
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, NoCredentialsError, PartialCredentialsError, BotoCoreError
 
 from app.config import get_settings
 
@@ -59,15 +59,43 @@ class AWSOrganizationsManager:
             logger.info(f"Found {len(accounts)} active AWS accounts")
             return accounts
             
+        except NoCredentialsError:
+            logger.error("AWS credentials not found - please configure credentials")
+            raise
+        except PartialCredentialsError:
+            logger.error("Incomplete AWS credentials - please check your configuration")
+            raise
+        except ClientError as e:
+            error_code = e.response['Error']['Code']
+            if error_code == 'AccessDeniedException':
+                logger.error("Access denied to AWS Organizations API - check IAM permissions")
+            elif error_code == 'OrganizationsNotInUseException':
+                logger.warning("AWS Organizations not enabled - returning master account only")
+                return await self._get_master_account_fallback()
+            else:
+                logger.error(f"AWS Organizations API error: {e}")
+            raise
+        except BotoCoreError as e:
+            logger.error(f"AWS SDK error: {e}")
+            raise
         except Exception as e:
-            logger.error(f"Error fetching AWS accounts: {e}")
-            # If Organizations API fails, return just the master account
+            logger.error(f"Unexpected error fetching AWS accounts: {e}")
+            # Last resort fallback
+            return await self._get_master_account_fallback()
+    
+    async def _get_master_account_fallback(self) -> List[Dict[str, Any]]:
+        """Fallback method to return master account info"""
+        try:
+            master_account_id = self._get_master_account_id()
             return [{
-                'id': 'master',
+                'id': master_account_id or 'master',
                 'name': 'Master Account',
                 'email': 'master@example.com',
                 'status': 'ACTIVE'
             }]
+        except Exception as e:
+            logger.error(f"Failed to get master account info: {e}")
+            return []
     
     async def get_account_session(self, account_id: str, role_name: str = "CloudSentryAuditRole"):
         """Assume role in target account and return session"""

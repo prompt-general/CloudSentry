@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     
     # Security
     allowed_origins: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+    allowed_hosts: List[str] = ["localhost", "127.0.0.1"]
     
     # Notifications
     slack_webhook_url: Optional[str] = None
