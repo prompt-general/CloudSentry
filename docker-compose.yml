@@ -38,12 +38,48 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://cloudsentry:changeme@postgres:5432/cloudsentry
+      # Core settings
+      - APP_NAME=CloudSentry
+      - APP_ENV=${APP_ENV:-development}
+      
+      # Database
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER:-cloudsentry}:${DB_PASSWORD:-changeme}@postgres:5432/${DB_NAME:-cloudsentry}
+      
+      # Redis
       - REDIS_URL=redis://redis:6379/0
       - WEBSOCKET_ENABLED=true
-      - AWS_REGION=${AWS_REGION}
+      
+      # AWS Configuration
+      - AWS_REGION=${AWS_REGION:-us-east-1}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+      
+      # Multi-account
+      - ENABLE_MULTI_ACCOUNT=${ENABLE_MULTI_ACCOUNT:-false}
+      - MEMBER_ACCOUNT_ROLE_NAME=${MEMBER_ACCOUNT_ROLE_NAME:-CloudSentryAuditRole}
+      - AUTO_DISCOVER_ACCOUNTS=${AUTO_DISCOVER_ACCOUNTS:-true}
+      
+      # Event Collection
+      - EVENT_BRIDGE_BUS=${EVENT_BRIDGE_BUS:-default}
+      - SQS_QUEUE_URL=${SQS_QUEUE_URL}
+      
+      # Notifications
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - NOTIFICATION_EMAIL=${NOTIFICATION_EMAIL}
+      
+      # Security
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-changeme-in-production}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:8000}
+      
+      # Scheduler
+      - FULL_AUDIT_INTERVAL_HOURS=${FULL_AUDIT_INTERVAL_HOURS:-24}
+      - MULTI_ACCOUNT_AUDIT_INTERVAL_HOURS=${MULTI_ACCOUNT_AUDIT_INTERVAL_HOURS:-24}
+      
     depends_on:
       postgres:
         condition: service_healthy
@@ -52,6 +88,14 @@ services:
     volumes:
       - ./app:/app/app
       - ./config:/app/config
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   dashboard:
@@ -65,6 +109,7 @@ services:
       - REACT_APP_WS_URL=ws://localhost:8000/ws
     depends_on:
       - app
+    restart: unless-stopped
 
   celery-worker:
     build: .
@@ -75,9 +120,15 @@ services:
       - AWS_REGION=${AWS_REGION}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - ENABLE_MULTI_ACCOUNT=${ENABLE_MULTI_ACCOUNT:-false}
+      - MEMBER_ACCOUNT_ROLE_NAME=${MEMBER_ACCOUNT_ROLE_NAME:-CloudSentryAuditRole}
+      - AUTO_DISCOVER_ACCOUNTS=${AUTO_DISCOVER_ACCOUNTS:-true}
+      - FULL_AUDIT_INTERVAL_HOURS=${FULL_AUDIT_INTERVAL_HOURS:-24}
+      - MULTI_ACCOUNT_AUDIT_INTERVAL_HOURS=${MULTI_ACCOUNT_AUDIT_INTERVAL_HOURS:-24}
     depends_on:
       - redis
       - postgres
+    restart: unless-stopped
 
   celery-beat:
     build: .
@@ -88,10 +139,61 @@ services:
       - AWS_REGION=${AWS_REGION}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - ENABLE_MULTI_ACCOUNT=${ENABLE_MULTI_ACCOUNT:-false}
+      - MEMBER_ACCOUNT_ROLE_NAME=${MEMBER_ACCOUNT_ROLE_NAME:-CloudSentryAuditRole}
+      - AUTO_DISCOVER_ACCOUNTS=${AUTO_DISCOVER_ACCOUNTS:-true}
+      - FULL_AUDIT_INTERVAL_HOURS=${FULL_AUDIT_INTERVAL_HOURS:-24}
+      - MULTI_ACCOUNT_AUDIT_INTERVAL_HOURS=${MULTI_ACCOUNT_AUDIT_INTERVAL_HOURS:-24}
     depends_on:
       - redis
       - postgres
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deployments/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deployments/ssl:/etc/nginx/ssl:ro
+      - ./deployments/nginx-log:/var/log/nginx
+    depends_on:
+      - app
+      - dashboard
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deployments/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deployments/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./deployments/grafana/datasources:/etc/grafana/provisioning/datasources
+    restart: unless-stopped
 
 volumes:
   postgres_data:
   redis_data:
+  prometheus_data:
+  grafana_data:
