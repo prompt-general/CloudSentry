@@ -1,0 +1,148 @@
+# Multi-stage build for production
+FROM python:3.11-slim as builder
+
+# Set build arguments
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+
+# Set labels
+LABEL org.label-schema.build-date=$BUILD_DATE \
+      org.label-schema.name="CloudSentry" \
+      org.label-schema.description="Cloud Security Auditing Platform" \
+      org.label-schema.url="https://github.com/cloudsentry/cloudsentry" \
+      org.label-schema.vcs-ref=$VCS_REF \
+      org.label-schema.vcs-url="https://github.com/cloudsentry/cloudsentry.git" \
+      org.label-schema.vendor="CloudSentry" \
+      org.label-schema.version=$VERSION \
+      org.label-schema.schema-version="1.0"
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    libpq-dev \
+    libffi-dev \
+    libssl-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+ENV VIRTUAL_ENV="/opt/venv"
+
+# Upgrade pip and install wheel
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install production-specific dependencies
+COPY requirements-production.txt .
+RUN pip install --no-cache-dir -r requirements-production.txt
+
+# Production stage
+FROM python:3.11-slim
+
+# Set production arguments
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+
+# Set labels
+LABEL org.label-schema.build-date=$BUILD_DATE \
+      org.label-schema.name="CloudSentry" \
+      org.label-schema.description="Cloud Security Auditing Platform" \
+      org.label-schema.url="https://github.com/cloudsentry/cloudsentry" \
+      org.label-schema.vcs-ref=$VCS_REF \
+      org.label-schema.vcs-url="https://github.com/cloudsentry/cloudsentry.git" \
+      org.label-schema.vendor="CloudSentry" \
+      org.label-schema.version=$VERSION \
+      org.label-schema.schema-version="1.0"
+
+# Set environment variables for production
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONHASHSEED=random \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /app
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    libffi-dev \
+    libssl-dev \
+    curl \
+    ca-certificates \
+    dumb-init \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+ENV VIRTUAL_ENV="/opt/venv"
+
+# Create non-root user with proper UID/GID
+RUN groupadd -r -g 1001 cloudsentry && \
+    useradd -r -u 1001 -g cloudsentry -d /app -s /bin/bash cloudsentry
+
+# Create necessary directories with proper permissions
+RUN mkdir -p /app/logs /app/data /app/tmp /app/static && \
+    chown -R cloudsentry:cloudsentry /app
+
+# Copy application code with proper ownership
+COPY --chown=cloudsentry:cloudsentry . .
+
+# Set permissions for application files
+RUN chmod -R 755 /app && \
+    chmod -R 644 /app/app/*.py /app/app/**/*.py && \
+    chmod +x /app/scripts/*.sh 2>/dev/null || true
+
+# Switch to non-root user
+USER cloudsentry
+
+# Create startup script
+RUN echo '#!/bin/bash\n\
+set -e\n\
+\n\
+# Wait for database\n\
+echo "Waiting for database..."\n\
+while ! nc -z $DATABASE_HOST $DATABASE_PORT 2>/dev/null; do\n\
+    sleep 1\n\
+done\n\
+echo "Database is ready!"\n\
+\n\
+# Wait for Redis\n\
+echo "Waiting for Redis..."\n\
+while ! nc -z $REDIS_HOST $REDIS_PORT 2>/dev/null; do\n\
+    sleep 1\n\
+done\n\
+echo "Redis is ready!"\n\
+\n\
+# Run database migrations\n\
+echo "Running database migrations..."\n\
+python -m alembic upgrade head || echo "Migrations completed or not needed"\n\
+\n\
+# Start the application\n\
+echo "Starting CloudSentry..."\n\
+exec "$@"' > /app/startup.sh && \
+chmod +x /app/startup.sh
+
+# Health check with comprehensive validation
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Expose port
+EXPOSE 8000
+
+# Set default command
+ENTRYPOINT ["/app/startup.sh"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--access-log", "-"]
