@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from typing import List, Optional
+from typing import List, Optional, Dict
 from functools import lru_cache
 
 class Settings(BaseSettings):
@@ -38,8 +38,26 @@ class Settings(BaseSettings):
     # Scheduler
     full_audit_interval_hours: int = 24
     
+    # Multi-account
+    enable_multi_account: bool = False
+    member_account_role_name: str = "CloudSentryAuditRole"
+    auto_discover_accounts: bool = True
+    excluded_accounts: List[str] = []
+    
+    # Cross-account event collection
+    central_event_bus_name: str = "default"
+    cross_account_sqs_queue_name: str = "cloudsentry-security-events"
+    
+    # Audit scheduling
+    multi_account_audit_interval_hours: int = 24
+    max_concurrent_audits: int = 3
+    
+    # Account-specific settings
+    account_configs: Dict[str, Dict] = {}
+    
     class Config:
         env_file = ".env"
+        env_nested_delimiter = "__"
         case_sensitive = False
 
 @lru_cache()
