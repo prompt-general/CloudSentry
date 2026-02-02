@@ -10,6 +10,7 @@ import json
 from app.config import get_settings
 from app.database import AsyncSessionLocal
 from app.models import Finding
+from app.notifier import notify_new_finding
 
 logger = logging.getLogger(__name__)
 
@@ -137,8 +138,10 @@ class RuleEngine:
         # Publish to Redis for real-time streaming
         await self._publish_finding(finding)
         
-        # Check for notifications
-        await self._check_notifications(finding)
+        # Send notifications for high/critical findings
+        if finding.severity in ['HIGH', 'CRITICAL']:
+            finding_dict = finding.to_dict()
+            asyncio.create_task(notify_new_finding(finding_dict))
     
     async def _store_finding(self, finding: Finding):
         """Store finding in database"""
