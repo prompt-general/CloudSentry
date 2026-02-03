@@ -20,6 +20,24 @@ class Settings(BaseSettings):
     aws_secret_access_key: Optional[str] = None
     aws_role_arn: Optional[str] = None
     
+    # Azure Configuration
+    azure_subscription_id: Optional[str] = None
+    azure_tenant_id: Optional[str] = None
+    azure_client_id: Optional[str] = None
+    azure_client_secret: Optional[str] = None
+    azure_eventhub_connection_string: Optional[str] = None
+    azure_eventhub_name: str = "insights-activity-logs"
+    azure_storage_connection_string: Optional[str] = None
+    azure_storage_container: str = "cloudsentry-checkpoints"
+    
+    # Cloud Provider Enable/Disable
+    enable_aws: bool = True
+    enable_azure: bool = False
+    enable_gcp: bool = False
+    
+    # Multi-cloud settings
+    default_cloud_provider: str = "aws"
+    
     # Event Sources
     event_bridge_bus: str = "default"
     sqs_queue_url: Optional[str] = None
