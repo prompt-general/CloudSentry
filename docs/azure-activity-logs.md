@@ -104,7 +104,114 @@ az eventhubs eventhub show \
   --resource-group cloudsentry-rg
 ```
 
-## Option B: Azure Monitor REST API (Alternative)
+## Option B: Diagnostic Settings with Log Analytics (Simpler Setup)
+
+### Prerequisites
+- Azure CLI installed and logged in
+- Basic Azure permissions
+
+### Step 1: Create Resource Group
+```bash
+# Create Resource Group
+az group create --name cloudsentry-rg --location eastus
+```
+
+### Step 2: Create Log Analytics Workspace
+```bash
+# Create Log Analytics Workspace
+az monitor log-analytics workspace create \
+  --resource-group cloudsentry-rg \
+  --workspace-name cloudsentry-law \
+  --location eastus
+```
+
+### Step 3: Configure Activity Log Diagnostic Settings
+```bash
+# Get subscription ID
+SUBSCRIPTION_ID=$(az account show --query id --output tsv)
+
+# Configure Activity Log diagnostic settings
+az monitor diagnostic-settings create \
+  --name CloudSentryActivityLogs \
+  --resource /subscriptions/$SUBSCRIPTION_ID \
+  --workspace /subscriptions/$SUBSCRIPTION_ID/resourceGroups/cloudsentry-rg/providers/Microsoft.OperationalInsights/workspaces/cloudsentry-law \
+  --logs '[{"category": "Administrative", "enabled": true}, {"category": "Security", "enabled": true}, {"category": "Policy", "enabled": true}, {"category": "ResourceHealth", "enabled": true}, {"category": "Autoscale", "enabled": true}, {"category": "Recommendation", "enabled": true}]'
+```
+
+### Step 4: Get Workspace Information
+```bash
+# Get workspace ID and key
+WORKSPACE_ID=$(az monitor log-analytics workspace show \
+  --resource-group cloudsentry-rg \
+  --name cloudsentry-law \
+  --query customerId \
+  --output tsv)
+
+WORKSPACE_KEY=$(az monitor log-analytics workspace get-shared-keys \
+  --resource-group cloudsentry-rg \
+  --name cloudsentry-law \
+  --query primarySharedKey \
+  --output tsv)
+
+echo "Workspace ID: $WORKSPACE_ID"
+echo "Workspace Key: $WORKSPACE_KEY"
+```
+
+### Step 5: Verify Configuration
+```bash
+# Check diagnostic settings
+az monitor diagnostic-settings list \
+  --resource /subscriptions/$SUBSCRIPTION_ID
+
+# Check Log Analytics workspace
+az monitor log-analytics workspace show \
+  --name cloudsentry-law \
+  --resource-group cloudsentry-rg
+```
+
+### Step 6: Query Activity Logs (Optional)
+```bash
+# Query Activity Logs from Log Analytics
+az monitor log-analytics query \
+  --workspace cloudsentry-law \
+  --analytics-query "AzureActivity | where TimeGenerated > ago(1h) | take 10"
+```
+
+### Environment Variables for Log Analytics
+```bash
+# Create .env file for Log Analytics
+cat > .env.loganalytics << EOF
+# Azure Configuration
+ENABLE_AZURE=true
+AZURE_SUBSCRIPTION_ID=$SUBSCRIPTION_ID
+AZURE_TENANT_ID=$(az account show --query tenantId --output tsv)
+AZURE_CLIENT_ID={client-id}
+AZURE_CLIENT_SECRET={client-secret}
+AZURE_LOG_ANALYTICS_WORKSPACE_ID=$WORKSPACE_ID
+AZURE_LOG_ANALYTICS_WORKSPACE_KEY=$WORKSPACE_KEY
+AZURE_LOG_ANALYTICS_WORKSPACE_NAME=cloudsentry-law
+
+# Cloud Provider Settings
+DEFAULT_CLOUD_PROVIDER=azure
+ENABLE_AWS=false
+ENABLE_GCP=false
+EOF
+```
+
+### Benefits of Log Analytics Approach
+- **Simpler Setup**: No Event Hub or Storage Account needed
+- **Built-in Queries**: Powerful KQL query language
+- **Long Retention**: Extended data retention options
+- **Cost Effective**: Lower infrastructure costs
+- **Integrated Monitoring**: Azure Monitor integration
+
+### Limitations
+- **Not Real-time**: Slight delay in data availability
+- **Query-based**: Requires polling instead of streaming
+- **API Limits**: Rate limits on Log Analytics API
+- **Storage Costs**: Log Analytics storage costs
+
+## Option C: Azure Monitor REST API (Alternative)
 
 ### Prerequisites
 - Service Principal with Reader role
