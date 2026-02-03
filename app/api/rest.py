@@ -28,7 +28,8 @@ async def get_findings(
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
     rule_id: Optional[str] = None,
-    search: Optional[str] = None
+    search: Optional[str] = None,
+    cloud_provider: Optional[str] = Query(None, regex="^(aws|azure|gcp)$")
 ):
     """
     Get security findings with filtering options
@@ -57,6 +58,8 @@ async def get_findings(
             filters.append(Finding.timestamp <= end_date)
         if search:
             filters.append(Finding.resource_id.ilike(f"%{search}%"))
+        if cloud_provider:
+            filters.append(Finding.cloud_provider == cloud_provider)
         
         if filters:
             query = query.where(and_(*filters))
@@ -191,7 +194,8 @@ async def delete_finding(
 async def get_findings_summary(
     db: AsyncSession = Depends(get_db),
     account_id: Optional[str] = None,
-    time_range: Optional[str] = Query("24h", regex="^(24h|7d|30d|all)$")
+    time_range: Optional[str] = Query("24h", regex="^(24h|7d|30d|all)$"),
+    cloud_provider: Optional[str] = Query(None, regex="^(aws|azure|gcp)$")
 ):
     """
     Get summary statistics for findings
@@ -214,6 +218,8 @@ async def get_findings_summary(
             query = query.where(Finding.timestamp >= start_time)
         if account_id:
             query = query.where(Finding.account_id == account_id)
+        if cloud_provider:
+            query = query.where(Finding.cloud_provider == cloud_provider)
         
         # Execute count queries
         total_query = select(func.count(Finding.id)).select_from(Finding)
@@ -221,6 +227,8 @@ async def get_findings_summary(
             total_query = total_query.where(Finding.timestamp >= start_time)
         if account_id:
             total_query = total_query.where(Finding.account_id == account_id)
+        if cloud_provider:
+            total_query = total_query.where(Finding.cloud_provider == cloud_provider)
         
         total_result = await db.execute(total_query)
         total = total_result.scalar()
@@ -235,6 +243,8 @@ async def get_findings_summary(
             severity_query = severity_query.where(Finding.timestamp >= start_time)
         if account_id:
             severity_query = severity_query.where(Finding.account_id == account_id)
+        if cloud_provider:
+            severity_query = severity_query.where(Finding.cloud_provider == cloud_provider)
         
         severity_query = severity_query.group_by(Finding.severity)
         severity_result = await db.execute(severity_query)
@@ -250,6 +260,8 @@ async def get_findings_summary(
             status_query = status_query.where(Finding.timestamp >= start_time)
         if account_id:
             status_query = status_query.where(Finding.account_id == account_id)
+        if cloud_provider:
+            status_query = status_query.where(Finding.cloud_provider == cloud_provider)
         
         status_query = status_query.group_by(Finding.status)
         status_result = await db.execute(status_query)
@@ -265,16 +277,36 @@ async def get_findings_summary(
             resource_query = resource_query.where(Finding.timestamp >= start_time)
         if account_id:
             resource_query = resource_query.where(Finding.account_id == account_id)
+        if cloud_provider:
+            resource_query = resource_query.where(Finding.cloud_provider == cloud_provider)
         
         resource_query = resource_query.group_by(Finding.resource_type)
         resource_result = await db.execute(resource_query)
         resource_counts = resource_result.all()
+        
+        # Count by cloud provider
+        cloud_query = select(
+            Finding.cloud_provider,
+            func.count(Finding.id).label('count')
+        )
+        
+        if start_time:
+            cloud_query = cloud_query.where(Finding.timestamp >= start_time)
+        if account_id:
+            cloud_query = cloud_query.where(Finding.account_id == account_id)
+        if cloud_provider:
+            cloud_query = cloud_query.where(Finding.cloud_provider == cloud_provider)
+        
+        cloud_query = cloud_query.group_by(Finding.cloud_provider)
+        cloud_result = await db.execute(cloud_query)
+        cloud_counts = cloud_result.all()
         
         return {
             "total": total,
             "by_severity": {s.severity: s.count for s in severity_counts},
             "by_status": {s.status: s.count for s in status_counts},
             "by_resource_type": {r.resource_type: r.count for r in resource_counts},
+            "by_cloud_provider": {c.cloud_provider: c.count for c in cloud_counts},
             "time_range": time_range,
             "start_time": start_time.isoformat() if start_time else None
         }
@@ -768,4 +800,33 @@ async def get_account_summary(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error fetching account summary"
+        )
+
+
+@router.get("/azure/subscriptions")
+async def get_azure_subscriptions():
+    """Get Azure subscriptions"""
+    try:
+        from azure.mgmt.subscription import SubscriptionClient
+        from azure.identity import DefaultAzureCredential
+        
+        credential = DefaultAzureCredential()
+        sub_client = SubscriptionClient(credential)
+        subscriptions = list(sub_client.subscriptions.list())
+        
+        return [
+            {
+                "id": sub.subscription_id,
+                "name": sub.display_name,
+                "state": sub.state,
+                "authorization_source": sub.authorization_source
+            }
+            for sub in subscriptions
+        ]
+        
+    except Exception as e:
+        logger.error(f"Error fetching Azure subscriptions: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error fetching Azure subscriptions"
         )
