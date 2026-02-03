@@ -10,6 +10,7 @@ class Finding(Base):
     __tablename__ = 'findings'
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    cloud_provider = Column(String(20), default='aws', nullable=False)  # 'aws', 'azure', 'gcp'
     rule_id = Column(String(50), nullable=False)
     resource_id = Column(String(255), nullable=False)
     resource_type = Column(String(50), nullable=False)
@@ -22,9 +23,15 @@ class Finding(Base):
     region = Column(String(50))
     status = Column(String(20), default='OPEN')
     
+    # Azure-specific fields
+    resource_group = Column(String(100))
+    subscription_id = Column(String(100))
+    tenant_id = Column(String(100))
+    
     def to_dict(self):
-        return {
+        result = {
             'id': str(self.id),
+            'cloud_provider': self.cloud_provider,
             'rule_id': self.rule_id,
             'resource_id': self.resource_id,
             'resource_type': self.resource_type,
@@ -37,11 +44,22 @@ class Finding(Base):
             'region': self.region,
             'status': self.status
         }
+        
+        # Add Azure-specific fields if present
+        if self.resource_group:
+            result['resource_group'] = self.resource_group
+        if self.subscription_id:
+            result['subscription_id'] = self.subscription_id
+        if self.tenant_id:
+            result['tenant_id'] = self.tenant_id
+            
+        return result
 
 class Event(Base):
     __tablename__ = 'events'
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    cloud_provider = Column(String(20), default='aws', nullable=False)  # 'aws', 'azure', 'gcp'
     event_id = Column(String(100), unique=True, nullable=False)
     event_name = Column(String(200), nullable=False)
     event_source = Column(String(100), nullable=False)
@@ -52,6 +70,11 @@ class Event(Base):
     region = Column(String(50), nullable=False)
     raw_event = Column(JSON)
     processed_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    
+    # Azure-specific fields
+    resource_group = Column(String(100))
+    subscription_id = Column(String(100))
+    tenant_id = Column(String(100))
 
 class RuleMetadata(Base):
     __tablename__ = 'rules'
