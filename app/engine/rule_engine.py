@@ -11,6 +11,7 @@ from app.config import get_settings
 from app.database import AsyncSessionLocal
 from app.models import Finding
 from app.notifier import notify_new_finding
+from app.engine.rules.base_rule import BaseRule
 from app.aws.organizations import AWSOrganizationsManager
 
 logger = logging.getLogger(__name__)
@@ -105,7 +106,7 @@ class RuleEngine:
     
     def __init__(self):
         self.settings = get_settings()
-        self.rules: List[Rule] = []
+        self.rules: List[BaseRule] = []
         self.redis = None
         self._load_rules()
     
@@ -117,22 +118,41 @@ class RuleEngine:
         )
     
     def _load_rules(self):
-        """Load all available security rules"""
-        # Dynamically import and instantiate rules
+        """Load all available security rules for all cloud providers"""
         try:
+            # AWS Rules
             from app.engine.rules.s3_rules import S3BucketPublicReadRule
             from app.engine.rules.ec2_rules import EC2SecurityGroupOpenSSHRule
             from app.engine.rules.ec2_rules import EC2SecurityGroupOpenRDPRule
             from app.engine.rules.iam_rules import IAMUserNoMFARule
             
+            # Azure Rules
+            from app.engine.rules.azure_rules import (
+                AzureStoragePublicAccessRule,
+                AzureNSGOpenSSHRule,
+                AzureVMNoDiskEncryptionRule,
+                AzureKeyVaultNoFirewallRule,
+                AzureSQLServerNoFirewallRule,
+                AzureStorageNoHTTPSRule
+            )
+            
             self.rules = [
+                # AWS Rules
                 S3BucketPublicReadRule(),
                 EC2SecurityGroupOpenSSHRule(),
                 EC2SecurityGroupOpenRDPRule(),
-                IAMUserNoMFARule()
+                IAMUserNoMFARule(),
+                
+                # Azure Rules
+                AzureStoragePublicAccessRule(),
+                AzureNSGOpenSSHRule(),
+                AzureVMNoDiskEncryptionRule(),
+                AzureKeyVaultNoFirewallRule(),
+                AzureSQLServerNoFirewallRule(),
+                AzureStorageNoHTTPSRule()
             ]
             
-            logger.info(f"Loaded {len(self.rules)} security rules")
+            logger.info(f"Loaded {len(self.rules)} security rules across AWS and Azure")
             
         except ImportError as e:
             logger.error(f"Error loading rules: {e}")
@@ -166,21 +186,27 @@ class RuleEngine:
         for finding in findings:
             await self._process_finding(finding)
     
-    def _is_rule_applicable(self, rule: Rule, event: Dict[str, Any]) -> bool:
+    def _is_rule_applicable(self, rule: BaseRule, event: Dict[str, Any]) -> bool:
         """Check if a rule is applicable to the given event"""
-        # Check resource type match (basic filter)
+        # Check cloud provider match
+        event_cloud = event.get('cloud_provider', 'aws')
+        if rule.cloud_provider != event_cloud:
+            return False
+        
+        # Check resource type match
         resource_type = event.get('resource_type', '').lower()
+        rule_resource_types = [rt.lower() for rt in rule.resource_types]
         
-        # Each rule can override this method for more specific filtering
-        # For now, use simple type-based filtering
-        rule_name = rule.__class__.__name__.lower()
+        # Check if any rule resource type matches
+        for rule_type in rule_resource_types:
+            if rule_type in resource_type or resource_type in rule_type:
+                return True
         
-        if 's3' in rule_name and resource_type == 's3':
-            return True
-        elif 'ec2' in rule_name and resource_type in ['ec2', 'security-group']:
-            return True
-        elif 'iam' in rule_name and resource_type == 'iam':
-            return True
+        # Azure specific type mapping
+        if event_cloud == 'azure':
+            azure_type = event.get('raw_event', {}).get('resourceType', '')
+            if azure_type in rule.resource_types:
+                return True
         
         return False
     
