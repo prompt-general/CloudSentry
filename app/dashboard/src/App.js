@@ -36,11 +36,49 @@ import {
   Error as ErrorIcon,
   ExpandMore as ExpandMoreIcon,
   AccountTree as AccountTreeIcon,
-  AccountBalance as AccountBalanceIcon
+  AccountBalance as AccountBalanceIcon,
+  Cloud as CloudIcon
 } from '@mui/icons-material';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { API_BASE_URL, fetchFindings, fetchSummary, fetchRules, websocketConnect } from './api';
 import './App.css';
+
+// Add cloud provider filter component
+const CloudProviderFilter = ({ cloudProvider, onCloudProviderChange }) => (
+  <FormControl fullWidth size="small">
+    <InputLabel>Cloud Provider</InputLabel>
+    <Select
+      value={cloudProvider}
+      label="Cloud Provider"
+      onChange={onCloudProviderChange}
+    >
+      <MenuItem value="all">All Clouds</MenuItem>
+      <MenuItem value="aws">AWS</MenuItem>
+      <MenuItem value="azure">Azure</MenuItem>
+    </Select>
+  </FormControl>
+);
+
+// Add cloud provider badge component
+const CloudProviderBadge = ({ provider }) => {
+  const colors = {
+    aws: '#FF9900',
+    azure: '#0078D4',
+    gcp: '#34A853'
+  };
+  
+  return (
+    <Chip
+      label={provider.toUpperCase()}
+      size="small"
+      sx={{
+        backgroundColor: colors[provider] || '#757575',
+        color: 'white',
+        fontWeight: 'bold'
+      }}
+    />
+  );
+};
 
 // Add account selector component
 function AccountSelector({ accounts, selectedAccounts, onAccountToggle }) {
@@ -82,6 +120,7 @@ function App() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [severityFilter, setSeverityFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [cloudProviderFilter, setCloudProviderFilter] = useState('all');
   const [accounts, setAccounts] = useState([]);
   const [selectedAccounts, setSelectedAccounts] = useState(['all']);
   const [accountSummary, setAccountSummary] = useState({});
@@ -146,8 +185,15 @@ function App() {
   const loadData = async () => {
     try {
       setLoading(true);
+      
+      // Add cloud provider filter to API params
+      const apiParams = {
+        limit: 100,
+        ...(cloudProviderFilter !== 'all' && { cloud_provider: cloudProviderFilter }),
+      };
+      
       const [findingsData, summaryData, rulesData] = await Promise.all([
-        fetchFindings({ limit: 100 }),
+        fetchFindings(apiParams),
         fetchSummary('24h'),
         fetchRules()
       ]);
@@ -202,10 +248,16 @@ function App() {
     setPage(0);
   };
 
+  const handleCloudProviderFilter = (event) => {
+    setCloudProviderFilter(event.target.value);
+    setPage(0);
+  };
+
   // Filter findings
   const filteredFindings = findings.filter(finding => {
     if (severityFilter !== 'all' && finding.severity !== severityFilter) return false;
     if (statusFilter !== 'all' && finding.status !== statusFilter) return false;
+    if (cloudProviderFilter !== 'all' && finding.cloud_provider !== cloudProviderFilter) return false;
     if (selectedAccounts.length > 0 && !selectedAccounts.includes('all') && !selectedAccounts.includes(finding.account_id)) return false;
     return true;
   });
@@ -267,6 +319,9 @@ function App() {
           Real-time multi-cloud security auditing
         </Typography>
       </Box>
+
+      {/* Cloud Provider Summary */}
+      <CloudProviderSummary />
 
       {/* Summary Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -454,6 +509,20 @@ function App() {
               </Select>
             </FormControl>
           </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Cloud Provider</InputLabel>
+              <Select
+                value={cloudProviderFilter}
+                label="Cloud Provider"
+                onChange={handleCloudProviderFilter}
+              >
+                <MenuItem value="all">All Clouds</MenuItem>
+                <MenuItem value="aws">AWS</MenuItem>
+                <MenuItem value="azure">Azure</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
           <Grid item xs={12} md={6}>
             <Typography variant="body2" color="text.secondary">
               Showing {filteredFindings.length} findings
@@ -469,6 +538,7 @@ function App() {
             <TableHead>
               <TableRow>
                 <TableCell>Time</TableCell>
+                <TableCell>Cloud</TableCell>
                 <TableCell>Rule</TableCell>
                 <TableCell>Resource</TableCell>
                 <TableCell>Severity</TableCell>
@@ -484,6 +554,9 @@ function App() {
                   <TableRow key={finding.id} hover>
                     <TableCell>
                       {new Date(finding.timestamp).toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      <CloudProviderBadge provider={finding.cloud_provider || 'aws'} />
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2">
