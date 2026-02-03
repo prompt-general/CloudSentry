@@ -12,6 +12,7 @@ from app.config import get_settings
 from app.database import get_db, AsyncSessionLocal
 from app.api import rest, websocket
 from app.engine.event_ingestor import start_event_ingestor
+from app.engine.azure_event_ingestor import start_azure_event_ingestor
 from app.scheduler.audit_scheduler import init_scheduler
 from app.security.middleware import (
     SecurityHeadersMiddleware,
@@ -54,18 +55,28 @@ async def lifespan(app: FastAPI):
     """Manage application startup and shutdown events"""
     logger.info("Starting CloudSentry...")
     
+    settings = get_settings()
+    
     # Initialize scheduler
     init_scheduler()
     
-    # Start event ingestor in background
-    await start_event_ingestor()
+    # Start AWS event ingestor if enabled
+    if settings.enable_aws:
+        await start_event_ingestor()
+    else:
+        logger.info("AWS event ingestion disabled")
+    
+    # Start Azure event ingestor if enabled
+    if settings.enable_azure:
+        await start_azure_event_ingestor()
+    else:
+        logger.info("Azure event ingestion disabled")
     
     # Start WebSocket manager
     from app.api.websocket import start_websocket_manager
     await start_websocket_manager()
     
     # Initialize multi-account setup if enabled
-    settings = get_settings()
     if settings.enable_multi_account:
         from app.aws.organizations import AWSOrganizationsManager
         org_manager = AWSOrganizationsManager()
