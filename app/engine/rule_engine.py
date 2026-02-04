@@ -136,6 +136,18 @@ class RuleEngine:
                 AzureStorageNoHTTPSRule
             )
             
+            # GCP Rules
+            from app.engine.rules.gcp_rules import (
+                GCPBucketPublicAccessRule,
+                GCPFirewallOpenSSHRule,
+                GCPInstanceNoServiceAccountRule,
+                GCPBucketNoVersioningRule,
+                GCPKMSKeyNoRotationRule,
+                GCPBucketNoLoggingRule,
+                GCPPublicCloudSQLRule,
+                GCPDefaultNetworkRule
+            )
+            
             self.rules = [
                 # AWS Rules
                 S3BucketPublicReadRule(),
@@ -149,10 +161,20 @@ class RuleEngine:
                 AzureVMNoDiskEncryptionRule(),
                 AzureKeyVaultNoFirewallRule(),
                 AzureSQLServerNoFirewallRule(),
-                AzureStorageNoHTTPSRule()
+                AzureStorageNoHTTPSRule(),
+                
+                # GCP Rules
+                GCPBucketPublicAccessRule(),
+                GCPFirewallOpenSSHRule(),
+                GCPInstanceNoServiceAccountRule(),
+                GCPBucketNoVersioningRule(),
+                GCPKMSKeyNoRotationRule(),
+                GCPBucketNoLoggingRule(),
+                GCPPublicCloudSQLRule(),
+                GCPDefaultNetworkRule()
             ]
             
-            logger.info(f"Loaded {len(self.rules)} security rules across AWS and Azure")
+            logger.info(f"Loaded {len(self.rules)} security rules across AWS, Azure, and GCP")
             
         except ImportError as e:
             logger.error(f"Error loading rules: {e}")
@@ -208,12 +230,23 @@ class RuleEngine:
             if azure_type in rule.resource_types:
                 return True
         
+        # GCP specific type mapping
+        if event_cloud == 'gcp':
+            # Check GCP service name
+            service_name = event.get('event_source', '')
+            if service_name in rule.resource_types:
+                return True
+            
+            # Check GCP resource type from resource_name
+            resource_name = event.get('resource_id', '')
+            if resource_name and any(rt in resource_name for rt in rule.resource_types):
+                return True
+        
         return False
     
     async def _process_finding(self, finding: Finding):
         """Process and store a finding"""
         # Store in database
-        await self._store_finding(finding)
         
         # Publish to Redis for real-time streaming
         await self._publish_finding(finding)
