@@ -415,3 +415,289 @@ class AzureStorageNoHTTPSRule(BaseRule):
         except Exception as e:
             logger.error(f"Error checking storage account secure transfer: {e}")
             return True
+
+
+# Additional Azure Security Rules
+
+class AzureVMNoManagedIdentityRule(BaseRule):
+    """Detects Azure VMs without managed identities enabled"""
+    
+    def __init__(self):
+        super().__init__(
+            rule_id="AZURE-007",
+            description="Azure Virtual Machine has no managed identity enabled",
+            severity="MEDIUM",
+            resource_types=["virtual-machine", "Microsoft.Compute/virtualMachines"],
+            cloud_provider="azure"
+        )
+    
+    def get_remediation_steps(self) -> str:
+        return """1. Navigate to the Virtual Machine in Azure Portal
+2. Click on 'Identity' under 'Settings'
+3. Set 'Status' to 'On' for System-assigned managed identity
+4. Configure User-assigned managed identities if needed
+5. Update applications to use managed identities instead of service principals
+6. Review and remove hardcoded credentials from applications"""
+    
+    async def evaluate(self, event: Dict[str, Any], resource_state: Dict[str, Any]) -> Optional[Finding]:
+        try:
+            resource_id = event.get('resource_id')
+            if not resource_id:
+                return None
+            
+            # Check if this is a VM event
+            if 'Microsoft.Compute/virtualMachines' not in resource_id:
+                return None
+            
+            # Extract subscription and resource details
+            parts = resource_id.split('/')
+            subscription_id = parts[2]
+            resource_group = parts[4]
+            vm_name = parts[-1]
+            
+            # Get Azure client
+            compute_client = self.get_azure_client('compute', subscription_id)
+            
+            try:
+                # Get VM properties
+                vm = compute_client.virtual_machines.get(
+                    resource_group_name=resource_group,
+                    vm_name=vm_name
+                )
+                
+                # Check if managed identity is disabled
+                if self._has_no_managed_identity(vm):
+                    return self.create_finding(event)
+                    
+            except Exception as e:
+                logger.error(f"Error checking VM {vm_name}: {e}")
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error in AzureVMNoManagedIdentityRule: {e}")
+            return None
+    
+    def _has_no_managed_identity(self, vm) -> bool:
+        """Check if VM has no managed identity"""
+        try:
+            if hasattr(vm, 'identity'):
+                return vm.identity.type == 'None'
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error checking VM managed identity: {e}")
+            return True
+
+
+class AzureResourceGroupNoTagsRule(BaseRule):
+    """Detects Azure Resource Groups without required tags"""
+    
+    def __init__(self):
+        super().__init__(
+            rule_id="AZURE-008",
+            description="Azure Resource Group has no required tags",
+            severity="LOW",
+            resource_types=["resource-group", "Microsoft.Resources/resourceGroups"],
+            cloud_provider="azure"
+        )
+    
+    def get_remediation_steps(self) -> str:
+        return """1. Navigate to the Resource Group in Azure Portal
+2. Click on 'Tags' in the left menu
+3. Add required tags such as: Environment, Owner, CostCenter, Project
+4. Implement tagging policies using Azure Policy
+5. Use Azure Cost Management to track costs by tags
+6. Set up automated tagging for new resources"""
+    
+    async def evaluate(self, event: Dict[str, Any], resource_state: Dict[str, Any]) -> Optional[Finding]:
+        try:
+            resource_id = event.get('resource_id')
+            if not resource_id:
+                return None
+            
+            # Check if this is a resource group event
+            if 'Microsoft.Resources/resourceGroups' not in resource_id:
+                return None
+            
+            # Check event name for resource group operations
+            event_name = event.get('event_name', '').lower()
+            if 'resourcegroups' not in event_name:
+                return None
+            
+            # Extract resource group details
+            parts = resource_id.split('/')
+            resource_group_name = parts[4]
+            
+            # Get resource group tags from event
+            tags = event.get('tags', {})
+            
+            # Check for required tags
+            if self._missing_required_tags(tags):
+                return self.create_finding(event)
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error in AzureResourceGroupNoTagsRule: {e}")
+            return None
+    
+    def _missing_required_tags(self, tags: Dict[str, str]) -> bool:
+        """Check if required tags are missing"""
+        required_tags = ['Environment', 'Owner', 'Project']
+        for tag in required_tags:
+            if tag not in tags or not tags[tag]:
+                return True
+        return False
+
+
+class AzureDiagnosticSettingsDisabledRule(BaseRule):
+    """Detects Azure resources without diagnostic settings enabled"""
+    
+    def __init__(self):
+        super().__init__(
+            rule_id="AZURE-009",
+            description="Azure resource has no diagnostic settings enabled",
+            severity="MEDIUM",
+            resource_types=["storage-account", "virtual-machine", "sql-server", "key-vault"],
+            cloud_provider="azure"
+        )
+    
+    def get_remediation_steps(self) -> str:
+        return """1. Navigate to the resource in Azure Portal
+2. Click on 'Diagnostic settings' under 'Monitoring'
+3. Click 'Add diagnostic setting'
+4. Configure logs and metrics to be sent to Log Analytics workspace
+5. Set appropriate retention periods
+6. Enable alerts for critical events
+7. Use Azure Policy to enforce diagnostic settings"""
+    
+    async def evaluate(self, event: Dict[str, Any], resource_state: Dict[str, Any]) -> Optional[Finding]:
+        try:
+            resource_id = event.get('resource_id')
+            if not resource_id:
+                return None
+            
+            # Check if this is a resource creation event
+            event_name = event.get('event_name', '').lower()
+            if 'write' not in event_name or 'create' not in event_name:
+                return None
+            
+            # Check resource type
+            resource_types = [
+                'Microsoft.Storage/storageAccounts',
+                'Microsoft.Compute/virtualMachines',
+                'Microsoft.Sql/servers',
+                'Microsoft.KeyVault/vaults'
+            ]
+            
+            if not any(resource_type in resource_id for resource_type in resource_types):
+                return None
+            
+            # This rule would typically check diagnostic settings
+            # For now, we'll flag new resources that should have diagnostics
+            
+            return self.create_finding(event)
+            
+        except Exception as e:
+            logger.error(f"Error in AzureDiagnosticSettingsDisabledRule: {e}")
+            return None
+
+
+class AzurePublicIPAddressRule(BaseRule):
+    """Detects Public IP addresses without security controls"""
+    
+    def __init__(self):
+        super().__init__(
+            rule_id="AZURE-010",
+            description="Public IP address without security controls",
+            severity="MEDIUM",
+            resource_types=["public-ip", "Microsoft.Network/publicIPAddresses"],
+            cloud_provider="azure"
+        )
+    
+    def get_remediation_steps(self) -> str:
+        return """1. Navigate to the Public IP address in Azure Portal
+2. Check if the IP is associated with a resource that needs public access
+3. If not needed, delete the Public IP address
+4. If needed, ensure it's behind a firewall or Application Gateway
+5. Use Network Security Groups to restrict access
+6. Consider using Private IP addresses where possible
+7. Monitor public IP usage and costs"""
+    
+    async def evaluate(self, event: Dict[str, Any], resource_state: Dict[str, Any]) -> Optional[Finding]:
+        try:
+            resource_id = event.get('resource_id')
+            if not resource_id:
+                return None
+            
+            # Check if this is a Public IP event
+            if 'Microsoft.Network/publicIPAddresses' not in resource_id:
+                return None
+            
+            # Extract subscription and resource details
+            parts = resource_id.split('/')
+            subscription_id = parts[2]
+            resource_group = parts[4]
+            ip_name = parts[-1]
+            
+            # Get Azure client
+            network_client = self.get_azure_client('network', subscription_id)
+            
+            try:
+                # Get Public IP properties
+                public_ip = network_client.public_ip_addresses.get(
+                    resource_group_name=resource_group,
+                    public_ip_address_name=ip_name
+                )
+                
+                # Check if IP is idle or unsecured
+                if self._is_unsecured_public_ip(public_ip):
+                    return self.create_finding(event)
+                    
+            except Exception as e:
+                logger.error(f"Error checking Public IP {ip_name}: {e}")
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error in AzurePublicIPAddressRule: {e}")
+            return None
+    
+    def _is_unsecured_public_ip(self, public_ip) -> bool:
+        """Check if Public IP is unsecured"""
+        try:
+            # Check if IP is not associated with any resource
+            if not hasattr(public_ip, 'ip_configuration') or not public_ip.ip_configuration:
+                return True
+            
+            # Check if IP is static and might be unused
+            if hasattr(public_ip, 'public_ip_allocation_method'):
+                if public_ip.public_ip_allocation_method == 'Static':
+                    # Additional checks could be added here
+                    pass
+            
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error checking Public IP security: {e}")
+            return False
+
+
+# Rule Registry
+AZURE_RULES = [
+    AzureStoragePublicAccessRule(),
+    AzureNSGOpenSSHRule(),
+    AzureVMNoDiskEncryptionRule(),
+    AzureKeyVaultNoFirewallRule(),
+    AzureSQLServerNoFirewallRule(),
+    AzureStorageNoHTTPSRule(),
+    AzureVMNoManagedIdentityRule(),
+    AzureResourceGroupNoTagsRule(),
+    AzureDiagnosticSettingsDisabledRule(),
+    AzurePublicIPAddressRule(),
+]
+
+def get_azure_rules():
+    """Get all Azure security rules"""
+    return AZURE_RULES

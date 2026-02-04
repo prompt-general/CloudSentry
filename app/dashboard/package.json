@@ -13,6 +13,7 @@
     "recharts": "^2.7.0",
     "react-icons": "^4.10.0",
     "@mui/material": "^5.13.0",
+    "@mui/icons-material": "^5.13.0",
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0"
   },
