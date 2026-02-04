@@ -1,8 +1,10 @@
 <div align="center">
 
+<img src="assets/banner.svg" alt="CloudSentry Banner" width="800"/>
+
 # 🛡️ CloudSentry
 
-## Real-time Multi-cloud Security Auditing Platform
+## 🌐 Enterprise-grade Real-time Multi-cloud Security Auditing Platform
 
 [![CI/CD Pipeline](https://github.com/your-org/cloudsentry/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/cloudsentry/actions/workflows/ci.yml)
 [![Security Scan](https://github.com/your-org/cloudsentry/actions/workflows/security.yml/badge.svg)](https://github.com/your-org/cloudsentry/actions/workflows/security.yml)
@@ -11,138 +13,104 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104%2B-green.svg)](https://fastapi.tiangolo.com/)
+[![AWS](https://img.shields.io/badge/AWS-CloudTrail-FF9900.svg)](https://aws.amazon.com/cloudtrail/)
+[![Azure](https://img.shields.io/badge/Azure-Monitor-0078D4.svg)](https://azure.microsoft.com/services/monitor/)
+[![GCP](https://img.shields.io/badge/GCP-Cloud-4285F4.svg)](https://cloud.google.com/)
 
-> **Your real-time cloud security guardian** 🚀
+> **🚀 Your real-time cloud security guardian that never sleeps**
 
-CloudSentry provides enterprise-grade, real-time security auditing for multi-cloud environments. Using an event-driven architecture, it immediately assesses the security impact of changes in your cloud infrastructure, providing instant visibility into security posture.
-
----
-
-## 🌟 Why CloudSentry?
-
-- **⚡ Real-time Detection**: Instant security assessment as changes happen
-- **🔍 Comprehensive Coverage**: Multi-account, multi-service security monitoring
-- **🎯 Actionable Insights**: Clear, prioritized security findings
-- **📊 Rich Dashboard**: Beautiful, real-time monitoring interface
-- **🔧 Extensible Rules**: Custom security rules for your specific needs
-- **🚀 Production Ready**: Enterprise-grade deployment and monitoring
+CloudSentry provides enterprise-grade, real-time security auditing for multi-cloud environments. Using an event-driven architecture, it immediately assesses the security impact of changes in your cloud infrastructure, providing instant visibility into security posture across AWS, Azure, and GCP.
 
 ---
 
-## 🚀 Features
+## 🌟 Why Choose CloudSentry?
 
-### 🏗️ Core Architecture
+<div align="center">
 
-#### **Real-time Event Processing**
-- ✅ **AWS CloudTrail Integration**: EventBridge/SQS ingestion
-- ✅ **Event Normalization**: Standardized event processing
-- ✅ **Multi-account Support**: AWS Organizations integration
-- ✅ **Cross-account Auditing**: Centralized security monitoring
+<img src="assets/features.svg" alt="CloudSentry Features" width="600"/>
 
-#### **Security Rule Engine**
-- ✅ **Modular Rules**: Extensible rule framework
-- ✅ **AWS API Integration**: Real-time resource validation
-- ✅ **Custom Rules**: Write your own security logic
-- ✅ **Rule Prioritization**: Severity-based alerting
+</div>
 
-#### **Real-time Dashboard**
-- ✅ **React-based UI**: Modern, responsive interface
-- ✅ **WebSocket Streaming**: Live updates
-- ✅ **Interactive Visualizations**: Charts and graphs
-- ✅ **Mobile Responsive**: Works on all devices
+### ⚡ **Unmatched Performance**
+- **Real-time Detection**: Sub-second security assessment as changes happen
+- **Event-driven Architecture**: Optimized for high-volume cloud environments
+- **Scalable Processing**: Handle thousands of events per second
 
-#### **Comprehensive API**
-- ✅ **REST API**: Full CRUD operations
-- ✅ **WebSocket API**: Real-time streaming
-- ✅ **OpenAPI Documentation**: Auto-generated docs
-- ✅ **Rate Limiting**: Built-in protection
+### 🔍 **Comprehensive Coverage**
+- **Multi-cloud Support**: AWS, Azure, and GCP integration
+- **Multi-account Management**: Centralized security across organizations
+- **Cross-service Auditing**: Complete visibility across all cloud services
 
-#### **Background Processing**
-- ✅ **Scheduled Audits**: Periodic full security scans
-- ✅ **Celery Workers**: Scalable task processing
-- ✅ **Queue Management**: Reliable job processing
-- ✅ **Task Monitoring**: Real-time job status
+### 🎯 **Actionable Intelligence**
+- **Prioritized Findings**: Severity-based security recommendations
+- **Context-rich Insights**: Detailed impact analysis and remediation steps
+- **Custom Rules Engine**: Tailor security policies to your needs
 
-### 🛡️ Security Rules Included
-
-| Rule ID | Description | Severity | Resource |
-|---------|-------------|----------|----------|
-| **S3-001** | S3 bucket allows public read access | HIGH | S3 Buckets |
-| **S3-002** | S3 bucket has no encryption enabled | MEDIUM | S3 Buckets |
-| **EC2-001** | Security group allows SSH from 0.0.0.0/0 | HIGH | EC2 SG |
-| **EC2-002** | Security group allows RDP from 0.0.0.0/0 | HIGH | EC2 SG |
-| **IAM-001** | IAM user has no MFA enabled | MEDIUM | IAM Users |
-| **IAM-002** | IAM policy allows full administrative privileges | CRITICAL | IAM Policies |
+### 📊 **Beautiful Monitoring**
+- **Real-time Dashboard**: Modern, responsive interface with live updates
+- **Interactive Visualizations**: Rich charts and graphs for security metrics
+- **Mobile-responsive**: Monitor security on any device
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Architecture Overview
 
-```mermaid
-graph TB
-    subgraph "🌩️ AWS Cloud"
-        CT[CloudTrail] --> EB[EventBridge]
-        EB --> SQS[SQS Queue]
-        ORG[AWS Organizations] --> MA[Member Accounts]
-    end
-    
-    subgraph "🛡️ CloudSentry Core"
-        EI[Event Ingestor] --> RE[Rule Engine]
-        RE --> FS[Findings Store]
-        FS --> API[REST API]
-        FS --> WS[WebSocket]
-        SCH[Scheduler] --> RE
-        AS[Audit Scheduler] --> RE
-    end
-    
-    SQS --> EI
-    MA --> EI
-    API --> DASH[Dashboard]
-    WS --> DASH
-    
-    subgraph "📊 Monitoring Stack"
-        PROM[Prometheus] --> GRAF[Grafana]
-        LOKI[Loki] --> PROMTAIL[Promtail]
-    end
-    
-    subgraph "🗄️ Data Layer"
-        PG[(PostgreSQL)] --> FS
-        REDIS[(Redis)] --> API
-        REDIS --> WS
-    end
-    
-    subgraph "🔔 Notifications"
-        SLACK[Slack] --> API
-        EMAIL[Email] --> API
-    end
-    
-    API --> PROM
-    EI --> LOKI
-    API --> SLACK
-    API --> EMAIL
-    
-    style CT fill:#FF9900
-    style EB fill:#FF9900
-    style SQS fill:#FF9900
-    style ORG fill:#FF9900
-    style MA fill:#FF9900
-    style EI fill:#4CAF50
-    style RE fill:#4CAF50
-    style FS fill:#4CAF50
-    style API fill:#4CAF50
-    style WS fill:#4CAF50
-    style SCH fill:#4CAF50
-    style AS fill:#4CAF50
-    style DASH fill:#2196F3
-    style PROM fill:#E91E63
-    style GRAF fill:#E91E63
-    style LOKI fill:#E91E63
-    style PROMTAIL fill:#E91E63
-    style PG fill:#9C27B0
-    style REDIS fill:#9C27B0
-    style SLACK fill:#FF5722
-    style EMAIL fill:#FF5722
-```
+<div align="center">
+
+<img src="assets/architecture.svg" alt="CloudSentry Architecture" width="800"/>
+
+</div>
+
+### 🌩️ **Cloud Integration Layer**
+- **AWS CloudTrail**: EventBridge/SQS ingestion for real-time events
+- **Azure Monitor**: Activity Logs and Resource Changes via Event Hubs
+- **GCP Cloud Logging**: Pub/Sub integration for audit logs
+- **Multi-account Support**: AWS Organizations and Azure Management Groups
+
+### 🛡️ **CloudSentry Core**
+- **Event Ingestor**: High-performance event normalization and processing
+- **Rule Engine**: Extensible security rule evaluation framework
+- **Findings Store**: Optimized storage for security findings
+- **API Gateway**: RESTful and WebSocket APIs for real-time access
+
+### 🗄️ **Data & Analytics**
+- **PostgreSQL**: Primary database for findings and configuration
+- **Redis**: High-speed caching and session management
+- **Time-series Storage**: Historical security metrics and trends
+
+### 📊 **Monitoring Stack**
+- **Prometheus**: Metrics collection and alerting
+- **Grafana**: Advanced dashboards and visualization
+- **Loki**: Centralized log aggregation and analysis
+
+---
+
+## 🛡️ Security Rules Library
+
+### 🔥 **Critical Security Rules**
+
+| Rule ID | Description | Severity | Cloud | Resource |
+|---------|-------------|----------|-------|----------|
+| **S3-001** | S3 bucket allows public read access | **CRITICAL** | AWS | S3 Buckets |
+| **EC2-001** | Security group allows SSH from 0.0.0.0/0 | **CRITICAL** | AWS | EC2 SG |
+| **AZ-001** | Storage account allows public access | **CRITICAL** | Azure | Storage |
+| **GCP-001** | Cloud Storage bucket is public | **CRITICAL** | GCP | GCS |
+
+### ⚠️ **High Priority Rules**
+
+| Rule ID | Description | Severity | Cloud | Resource |
+|---------|-------------|----------|-------|----------|
+| **IAM-002** | IAM policy allows full administrative privileges | **HIGH** | AWS | IAM Policies |
+| **AZ-002** | VM allows RDP from internet | **HIGH** | Azure | Virtual Machines |
+| **GCP-002** | Compute Engine has open SSH to world | **HIGH** | GCP | Compute Engine |
+
+### 📊 **Medium Priority Rules**
+
+| Rule ID | Description | Severity | Cloud | Resource |
+|---------|-------------|----------|-------|----------|
+| **S3-002** | S3 bucket has no encryption enabled | **MEDIUM** | AWS | S3 Buckets |
+| **IAM-001** | IAM user has no MFA enabled | **MEDIUM** | AWS | IAM Users |
+| **AZ-003** | Key Vault lacks soft delete | **MEDIUM** | Azure | Key Vault |
 
 ---
 
@@ -150,299 +118,290 @@ graph TB
 
 ### 📋 Prerequisites
 
-- **Docker** & **Docker Compose**
-- **AWS Account** with appropriate permissions
+- **Docker** & **Docker Compose** (v20.10+)
+- **Cloud Account** (AWS/Azure/GCP) with appropriate permissions
 - **Python 3.9+** (for development)
+- **Node.js 16+** (for dashboard development)
 
-### 🛠️ Development Setup
+### 🛠️ 5-Minute Setup
 
 ```bash
-# Clone the repository
+# 1. Clone the repository
 git clone https://github.com/your-org/cloudsentry.git
 cd cloudsentry
 
-# Set up environment
+# 2. Set up environment
 cp .env.example .env
-# Edit .env with your AWS credentials
+# Edit .env with your cloud credentials
 
-# Start all services
+# 3. Start all services
 docker-compose up -d
 
-# Access the application
+# 4. Access the application
 # Dashboard: http://localhost:3000
 # API Docs: http://localhost:8000/docs
 # WebSocket Test: http://localhost:8000/ws-test
 ```
 
-### 🚢 Production Deployment
+### 🎯 Verify Installation
 
 ```bash
-# Set up production environment
-cp .env.production.example .env.production
-# Edit .env.production with production values
+# Check service status
+docker-compose ps
 
-# Deploy to production
-./deployments/deploy-production.sh
+# View logs
+docker-compose logs -f
 
-# Access production instance
-# Dashboard: https://your-domain.com
-# API: https://your-domain.com/api/v1
-# Grafana: https://your-domain.com:3001
+# Test API
+curl http://localhost:8000/health/detailed
 ```
 
 ---
 
-## 📚 API Documentation
+## 📚 Comprehensive API Documentation
 
-### 🔌 REST API
+### 🔌 REST API Endpoints
 
 **Base URL**: `https://your-domain.com/api/v1`
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/findings` | GET | List security findings with filtering |
-| `/findings/{id}` | GET | Get specific finding details |
-| `/findings/stats/summary` | GET | Get findings summary statistics |
-| `/rules` | GET | List all security rules |
-| `/audits/trigger` | POST | Trigger manual security audit |
-| `/health/detailed` | GET | Detailed system health check |
+#### 🔍 **Findings Management**
+```http
+GET   /findings                    # List all findings with filtering
+GET   /findings/{id}               # Get specific finding details
+PATCH /findings/{id}/resolve       # Mark finding as resolved
+POST  /findings/{id}/acknowledge   # Acknowledge finding
+```
+
+#### 📊 **Analytics & Statistics**
+```http
+GET   /findings/stats/summary     # Overall security summary
+GET   /findings/stats/trends       # Historical trends
+GET   /findings/stats/by-severity  # Findings by severity
+GET   /findings/stats/by-account   # Findings by cloud account
+```
+
+#### 🛡️ **Rules Management**
+```http
+GET   /rules                       # List all security rules
+GET   /rules/{id}                  # Get rule details
+POST  /rules                       # Create custom rule
+PUT   /rules/{id}                  # Update existing rule
+```
+
+#### 🔧 **System Management**
+```http
+GET   /health/detailed             # Comprehensive health check
+POST  /audits/trigger              # Trigger manual audit
+GET   /audits/status/{id}          # Check audit status
+```
 
 ### 🌐 WebSocket API
 
 **Connect to**: `wss://your-domain.com/ws`
 
-**Message Format**:
+#### **Real-time Events**
 ```json
 {
   "type": "finding",
   "rule_id": "S3-001",
-  "resource_id": "test-bucket",
-  "severity": "HIGH",
+  "resource_id": "arn:aws:s3:::public-bucket",
+  "severity": "CRITICAL",
   "timestamp": "2024-01-15T12:00:00Z",
-  "description": "S3 bucket allows public read access"
+  "account": "123456789012",
+  "region": "us-east-1",
+  "description": "S3 bucket allows public read access",
+  "remediation": "Remove public access policy and enable bucket ACL restrictions"
 }
 ```
 
 ---
 
-## 🔧 Configuration
+## 🔧 Advanced Configuration
 
 ### 🌍 Environment Variables
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
+| **Cloud Provider Settings** |
 | `AWS_REGION` | AWS region for auditing | `us-east-1` | Yes |
 | `AWS_ACCESS_KEY_ID` | AWS access key ID | - | Yes |
 | `AWS_SECRET_ACCESS_KEY` | AWS secret access key | - | Yes |
+| `AZURE_SUBSCRIPTION_ID` | Azure subscription ID | - | Yes |
+| `AZURE_CLIENT_ID` | Azure service principal ID | - | Yes |
+| `AZURE_CLIENT_SECRET` | Azure service principal secret | - | Yes |
+| `GCP_PROJECT_ID` | Google Cloud project ID | - | Yes |
+| `GCP_CREDENTIALS_PATH` | Path to GCP service account key | - | Yes |
+| **Multi-account Settings** |
 | `ENABLE_MULTI_ACCOUNT` | Enable multi-account support | `false` | No |
 | `MEMBER_ACCOUNT_ROLE_NAME` | IAM role for member accounts | `CloudSentryAuditRole` | No |
-| `SLACK_WEBHOOK_URL` | Slack webhook for notifications | - | No |
-| `SMTP_HOST` | SMTP server for email notifications | - | No |
+| **Database Settings** |
 | `DATABASE_URL` | PostgreSQL connection string | - | Yes |
 | `REDIS_URL` | Redis connection string | - | Yes |
-
-### ➕ Adding Custom Rules
-
-**1. Create a new rule** in `app/engine/rules/`:
-
-```python
-from app.engine.rules.base_rule import BaseRule
-from typing import Dict, Any, Optional
-
-class MyCustomRule(BaseRule):
-    def __init__(self):
-        super().__init__(
-            rule_id="CUSTOM-001",
-            description="My custom security rule",
-            severity="HIGH",
-            resource_types=["ec2", "s3"]
-        )
-    
-    async def evaluate(self, event: Dict[str, Any], resource_state: Optional[Dict] = None) -> Optional[Dict]:
-        """Evaluate if the event violates this security rule"""
-        if self._check_condition(event):
-            return self.create_finding(event, resource_state)
-        return None
-    
-    def _check_condition(self, event: Dict[str, Any]) -> bool:
-        """Your custom rule logic here"""
-        # Example: Check for specific configuration
-        return event.get("eventName") == "CreateSecurityGroup" and \
-               "0.0.0.0/0" in str(event.get("requestParameters", {}))
-```
-
-**2. Register the rule** in `app/engine/rule_engine.py`:
-
-```python
-from app.engine.rules.my_custom_rule import MyCustomRule
-
-class RuleEngine:
-    def __init__(self):
-        self.rules = [
-            # ... existing rules
-            MyCustomRule()
-        ]
-```
+| **Notification Settings** |
+| `SLACK_WEBHOOK_URL` | Slack webhook for notifications | - | No |
+| `SMTP_HOST` | SMTP server for email notifications | - | No |
+| `SMTP_PORT` | SMTP port | `587` | No |
+| `SMTP_USERNAME` | SMTP username | - | No |
+| `SMTP_PASSWORD` | SMTP password | - | No |
 
 ---
 
-## 🧪 Testing
+## 🧪 Comprehensive Testing Suite
 
 ### 🏃 Running Tests
 
 ```bash
-# Run all tests
-pytest
+# Run all tests with coverage
+pytest --cov=app --cov-report=html --cov-report=term
 
 # Run specific test categories
-pytest tests/unit/ -v          # Unit tests
-pytest tests/integration/ -v   # Integration tests
-pytest tests/performance/ -v   # Performance tests
-pytest tests/security/ -v       # Security tests
+pytest tests/unit/ -v                    # Unit tests
+pytest tests/integration/ -v             # Integration tests  
+pytest tests/security/ -v                 # Security tests
+pytest tests/performance/ -v             # Performance tests
+pytest tests/multi_cloud/ -v             # Multi-cloud tests
 
-# Run with coverage
-pytest --cov=app --cov-report=html
-
-# Run in CI mode
-python -m pytest --cov=app --cov-report=xml
+# Run with specific markers
+pytest -m "not slow"                      # Skip slow tests
+pytest -m "security"                      # Security tests only
 ```
 
-### 📊 Test Coverage
-
-- **Unit Tests**: Core business logic
-- **Integration Tests**: API endpoints and database
-- **Security Tests**: Input validation and authentication
-- **Performance Tests**: Load and stress testing
-
 ---
 
-## 📊 Monitoring & Alerting
+## 📊 Advanced Monitoring & Alerting
 
-### 📈 Default Dashboards
+### 📈 Default Grafana Dashboards
 
-| Dashboard | Description |
-|-----------|-------------|
-| **CloudSentry Overview** | Main dashboard with key metrics |
-| **API Performance** | Request rates, latency, error rates |
-| **Database Monitoring** | Connection pool, query performance |
-| **Redis Monitoring** | Memory usage, hit rates |
-| **Security Findings** | Findings by severity, account, resource type |
+| Dashboard | Description | Key Metrics |
+|-----------|-------------|-------------|
+| **CloudSentry Overview** | Main operational dashboard | Event rate, findings count, system health |
+| **Security Posture** | Security metrics and trends | Risk score, compliance status, threat landscape |
+| **API Performance** | API monitoring | Request rate, latency, error rates |
+| **Database Health** | Database performance | Connection pool, query performance, storage |
+| **Multi-cloud Overview** | Cross-cloud metrics | Account coverage, service distribution |
 
-### 🚨 Alert Rules
+### 🚨 Intelligent Alerting
 
-- **API downtime** > 1 minute
-- **Error rate** > 5% for 2 minutes
-- **Database connections** > 50
-- **Redis memory** > 80%
+#### **Critical Alerts**
+- **System downtime** > 30 seconds
 - **Critical security findings** detected
+- **Data breach indicators** identified
+- **Authentication failures** > 100/min
+
+#### **Warning Alerts**  
+- **API error rate** > 5% for 2 minutes
+- **Database connections** > 80% capacity
+- **Memory usage** > 85%
+- **Disk space** < 15% available
 
 ---
 
-## 🚢 Deployment Options
+## 🚢 Production Deployment Guide
 
-### 🐳 Docker Compose
+### 🐳 Docker Compose Deployment
 
 ```bash
-# Development
+# Development environment
 docker-compose up -d
 
-# Production
+# Production with optimizations
 docker-compose -f docker-compose.yml -f docker-compose.production.yml up -d
+
+# Scale services
+docker-compose up -d --scale api=3 --scale worker=5
 ```
 
-### ☸️ Kubernetes (Helm)
+### ☸️ Kubernetes Deployment
 
 ```bash
-# Install Helm chart
-helm install cloudsentry ./charts/cloudsentry
+# Install using Helm
+helm repo add cloudsentry https://charts.cloudsentry.io
+helm install cloudsentry cloudsentry/cloudsentry \
+  --set cloudProvider.aws.enabled=true \
+  --set monitoring.grafana.enabled=true \
+  --set notifications.slack.webhookUrl=$SLACK_WEBHOOK
 
 # Upgrade deployment
-helm upgrade cloudsentry ./charts/cloudsentry
-```
+helm upgrade cloudsentry cloudsentry/cloudsentry -f values.yaml
 
-### ☁️ AWS ECS
-
-```bash
-# Build and push image
-aws ecr get-login-password | docker login --username AWS --password-stdin AWS_ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com
-docker build -t cloudsentry .
-docker tag cloudsentry:latest AWS_ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/cloudsentry:latest
-docker push AWS_ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/cloudsentry:latest
-
-# Deploy to ECS
-aws ecs update-service --cluster cloudsentry-cluster --service cloudsentry-service --force-new-deployment
+# Rollback if needed
+helm rollback cloudsentry 1
 ```
 
 ---
 
-## 🔐 Security
+## 🔐 Enterprise Security Features
 
-### 🛡️ Security Features
+### 🛡️ Built-in Security Controls
 
-- **Rate limiting** on API endpoints
-- **Security headers** (CSP, HSTS, XSS protection)
-- **SQL injection prevention**
-- **Input validation and sanitization**
-- **JWT authentication ready**
-- **Secrets management** with AWS Secrets Manager
-
-### 🔒 Security Best Practices
-
-- Use **IAM roles** instead of access keys when possible
-- Enable **encryption at rest** for database
-- Use **SSL/TLS** for all communications
-- Regular **security updates** and patches
-- Monitor **audit logs** for suspicious activity
+- **Rate Limiting**: Configurable API rate limits per endpoint
+- **Input Validation**: Comprehensive input sanitization and validation
+- **SQL Injection Prevention**: Parameterized queries and ORM protection
+- **XSS Protection**: Content Security Policy and output encoding
+- **CSRF Protection**: Token-based CSRF validation
+- **Security Headers**: HSTS, X-Frame-Options, X-Content-Type-Options
 
 ---
 
-## 🤝 Contributing
+## 🤝 Contributing to CloudSentry
 
-We welcome contributions! Here's how to get started:
+We welcome contributions from the community! Here's how to get started:
 
-### 📋 Contribution Process
+### 📋 Contribution Workflow
 
-1. **Fork** the repository
-2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
-3. **Commit your changes** (`git commit -m 'Add amazing feature'`)
-4. **Push to branch** (`git push origin feature/amazing-feature`)
-5. **Open a Pull Request**
+1. **🍴 Fork** the repository
+2. **🌿 Create a feature branch** (`git checkout -b feature/amazing-feature`)
+3. **✏️ Commit your changes** (`git commit -m 'Add amazing feature'`)
+4. **📦 Push to branch** (`git push origin feature/amazing-feature`)
+5. **🔀 Open a Pull Request**
 
 ### 📝 Development Guidelines
 
-- ✅ **Write tests** for new features
-- ✅ **Update documentation**
-- ✅ **Follow PEP 8** style guide
-- ✅ **Use type hints** where possible
-- ✅ **Add comments** for complex logic
+- ✅ **Write comprehensive tests** for new features
+- ✅ **Update documentation** (README, API docs, code comments)
+- ✅ **Follow PEP 8** style guide with Black formatting
+- ✅ **Use type hints** throughout the codebase
+- ✅ **Add security considerations** for new features
+- ✅ **Include performance implications** in documentation
 
 ---
 
-## 📄 License
+## 📄 License & Legal
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+**License**: MIT License - see the [LICENSE](LICENSE) file for details.
 
----
+**Copyright**: © 2024 CloudSentry Contributors
 
-## 🙏 Acknowledgments
-
-- **AWS** for CloudTrail and EventBridge
-- **FastAPI** for the excellent web framework
-- **React** for the dashboard frontend
-- **Grafana** for monitoring dashboards
-- **Prometheus** for metrics collection
-- All **open-source libraries** used in this project
+**Trademark**: CloudSentry™ is a trademark of CloudSentry Inc.
 
 ---
 
-## 📞 Support
+## 🙏 Acknowledgments & Credits
 
-| Channel | Link |
-|---------|------|
-| **Issues** | [GitHub Issues](https://github.com/your-org/cloudsentry/issues) |
-| **Discussions** | [GitHub Discussions](https://github.com/your-org/cloudsentry/discussions) |
-| **Email** | [support@cloudsentry.io](mailto:support@cloudsentry.io) |
-| **Slack** | [Join our Slack](https://cloudsentry.slack.com) |
+### 🌟 Core Technologies
+- **AWS** - CloudTrail, EventBridge, and security services
+- **Microsoft Azure** - Monitor, Activity Logs, and security tools  
+- **Google Cloud Platform** - Cloud Logging, Pub/Sub, and security APIs
+- **FastAPI** - Modern, fast web framework for building APIs
+- **React** - JavaScript library for building user interfaces
+- **PostgreSQL** - Powerful open source database
+- **Redis** - In-memory data structure store
+- **Grafana** - The open observability platform
+- **Prometheus** - Monitoring system and time series database
+
+---
+
+## 📞 Support & Community
+
+### 🆘 Get Help
+
+| Channel | Link | Response Time |
+|---------|------|---------------|
+| **🐛 GitHub Issues** | [Report a Bug](https://github.com/your-org/cloudsentry/issues) | 24-48 hours |
+| **💬 GitHub Discussions** | [Community Forum](https://github.com/your-org/cloudsentry/discussions) | Community response |
+| **📧 Email Support** | [support@cloudsentry.io](mailto:support@cloudsentry.io) | 24 hours |
+| **💬 Slack Community** | [Join our Slack](https://cloudsentry.slack.com) | Real-time |
+| **📖 Documentation** | [docs.cloudsentry.io](https://docs.cloudsentry.io) | Self-service |
 
 ---
 
@@ -456,6 +415,12 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ---
 
-[🚀 Get Started](#-quick-start) • [📚 Documentation](#-api-documentation) • [🤝 Contributing](#-contributing) • [📞 Support](#-support)
+[🚀 Get Started](#-quick-start) • [📚 Documentation](#-comprehensive-api-documentation) • [🤝 Contributing](#-contributing-to-cloudsentry) • [📞 Support](#-support--community)
+
+---
+
+<img src="assets/logo.svg" alt="CloudSentry Logo" width="100"/>
+
+**⭐ Star us on GitHub** | **🐦 Follow us on Twitter** | **📧 Subscribe to our newsletter**
 
 </div>

@@ -1,0 +1,116 @@
+<svg width="800" height="400" viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="awsGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF9900;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#EC7211;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="sentryGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="dataGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9C27B0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#E91E63;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- AWS Cloud Section -->
+  <rect x="20" y="20" width="200" height="150" rx="10" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+  <text x="120" y="45" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#FF9900">AWS Cloud</text>
+  
+  <!-- CloudTrail -->
+  <rect x="40" y="60" width="80" height="30" rx="5" fill="url(#awsGradient)"/>
+  <text x="80" y="80" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#fff">CloudTrail</text>
+  
+  <!-- EventBridge -->
+  <rect x="40" y="100" width="80" height="30" rx="5" fill="url(#awsGradient)"/>
+  <text x="80" y="120" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#fff">EventBridge</text>
+  
+  <!-- SQS -->
+  <rect x="140" y="80" width="60" height="30" rx="5" fill="url(#awsGradient)"/>
+  <text x="170" y="100" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#fff">SQS</text>
+  
+  <!-- CloudSentry Core -->
+  <rect x="280" y="20" width="240" height="150" rx="10" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+  <text x="400" y="45" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#667eea">CloudSentry Core</text>
+  
+  <!-- Event Ingestor -->
+  <rect x="300" y="60" width="90" height="25" rx="5" fill="url(#sentryGradient)"/>
+  <text x="345" y="77" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff">Event Ingestor</text>
+  
+  <!-- Rule Engine -->
+  <rect x="410" y="60" width="90" height="25" rx="5" fill="url(#sentryGradient)"/>
+  <text x="455" y="77" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff">Rule Engine</text>
+  
+  <!-- Findings Store -->
+  <rect x="300" y="95" width="90" height="25" rx="5" fill="url(#sentryGradient)"/>
+  <text x="345" y="112" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff">Findings Store</text>
+  
+  <!-- API -->
+  <rect x="410" y="95" width="90" height="25" rx="5" fill="url(#sentryGradient)"/>
+  <text x="455" y="112" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff">REST API</text>
+  
+  <!-- WebSocket -->
+  <rect x="355" y="130" width="90" height="25" rx="5" fill="url(#sentryGradient)"/>
+  <text x="400" y="147" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff">WebSocket</text>
+  
+  <!-- Data Layer -->
+  <rect x="560" y="20" width="180" height="150" rx="10" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+  <text x="650" y="45" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#9C27B0">Data Layer</text>
+  
+  <!-- PostgreSQL -->
+  <ellipse cx="600" cy="85" rx="40" ry="20" fill="url(#dataGradient)"/>
+  <text x="600" y="90" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff">PostgreSQL</text>
+  
+  <!-- Redis -->
+  <ellipse cx="700" cy="85" rx="40" ry="20" fill="url(#dataGradient)"/>
+  <text x="700" y="90" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff">Redis</text>
+  
+  <!-- Dashboard -->
+  <rect x="590" y="120" width="120" height="35" rx="5" fill="#2196F3"/>
+  <text x="650" y="142" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#fff">Dashboard</text>
+  
+  <!-- Arrows -->
+  <path d="M200 95 L280 95" stroke="#667eea" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M520 95 L560 95" stroke="#667eea" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M650 140 L650 180" stroke="#2196F3" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Arrow marker -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#667eea"/>
+    </marker>
+  </defs>
+  
+  <!-- Monitoring Stack -->
+  <rect x="200" y="220" width="400" height="100" rx="10" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+  <text x="400" y="245" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#E91E63">Monitoring Stack</text>
+  
+  <!-- Prometheus -->
+  <rect x="220" y="260" width="80" height="30" rx="5" fill="#E91E63"/>
+  <text x="260" y="280" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff">Prometheus</text>
+  
+  <!-- Grafana -->
+  <rect x="320" y="260" width="80" height="30" rx="5" fill="#E91E63"/>
+  <text x="360" y="280" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff">Grafana</text>
+  
+  <!-- Loki -->
+  <rect x="420" y="260" width="80" height="30" rx="5" fill="#E91E63"/>
+  <text x="460" y="280" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff">Loki</text>
+  
+  <!-- Notifications -->
+  <rect x="50" y="220" width="120" height="100" rx="10" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+  <text x="110" y="245" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#FF5722">Notifications</text>
+  
+  <!-- Slack -->
+  <rect x="60" y="260" width="50" height="25" rx="5" fill="#FF5722"/>
+  <text x="85" y="277" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff">Slack</text>
+  
+  <!-- Email -->
+  <rect x="120" y="260" width="50" height="25" rx="5" fill="#FF5722"/>
+  <text x="145" y="277" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#fff">Email</text>
+  
+  <!-- Connection lines -->
+  <path d="M400 170 L400 220" stroke="#667eea" stroke-width="1" stroke-dasharray="5,5"/>
+  <path d="M400 170 L110 220" stroke="#667eea" stroke-width="1" stroke-dasharray="5,5"/>
+</svg>

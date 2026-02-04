@@ -1,0 +1,71 @@
+<svg width="600" height="300" viewBox="0 0 600 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="featureGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4facfe;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00f2fe;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Real-time Detection -->
+  <g transform="translate(50, 50)">
+    <circle cx="40" cy="40" r="35" fill="url(#featureGradient)" opacity="0.1"/>
+    <circle cx="40" cy="40" r="25" fill="url(#featureGradient)" opacity="0.3"/>
+    <circle cx="40" cy="40" r="15" fill="url(#featureGradient)"/>
+    <path d="M40 25 L40 55 M25 40 L55 40" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+    <text x="40" y="90" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#4facfe">Real-time Detection</text>
+  </g>
+  
+  <!-- Multi-cloud Support -->
+  <g transform="translate(200, 50)">
+    <circle cx="40" cy="40" r="35" fill="url(#featureGradient)" opacity="0.1"/>
+    <circle cx="40" cy="40" r="25" fill="url(#featureGradient)" opacity="0.3"/>
+    <circle cx="40" cy="40" r="15" fill="url(#featureGradient)"/>
+    <ellipse cx="30" cy="35" rx="8" ry="5" fill="#fff"/>
+    <ellipse cx="50" cy="35" rx="8" ry="5" fill="#fff"/>
+    <ellipse cx="40" cy="45" rx="8" ry="5" fill="#fff"/>
+    <text x="40" y="90" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#4facfe">Multi-cloud Support</text>
+  </g>
+  
+  <!-- Actionable Insights -->
+  <g transform="translate(350, 50)">
+    <circle cx="40" cy="40" r="35" fill="url(#featureGradient)" opacity="0.1"/>
+    <circle cx="40" cy="40" r="25" fill="url(#featureGradient)" opacity="0.3"/>
+    <circle cx="40" cy="40" r="15" fill="url(#featureGradient)"/>
+    <path d="M30 40 L35 45 L50 30" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <text x="40" y="90" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#4facfe">Actionable Insights</text>
+  </g>
+  
+  <!-- Rich Dashboard -->
+  <g transform="translate(500, 50)">
+    <circle cx="40" cy="40" r="35" fill="url(#featureGradient)" opacity="0.1"/>
+    <circle cx="40" cy="40" r="25" fill="url(#featureGradient)" opacity="0.3"/>
+    <circle cx="40" cy="40" r="15" fill="url(#featureGradient)"/>
+    <rect x="30" y="30" width="20" height="20" rx="2" fill="#fff"/>
+    <rect x="32" y="32" width="8" height="8" fill="#4facfe"/>
+    <rect x="42" y="40" width="6" height="8" fill="#4facfe"/>
+    <text x="40" y="90" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#4facfe">Rich Dashboard</text>
+  </g>
+  
+  <!-- Extensible Rules -->
+  <g transform="translate(125, 180)">
+    <circle cx="40" cy="40" r="35" fill="url(#featureGradient)" opacity="0.1"/>
+    <circle cx="40" cy="40" r="25" fill="url(#featureGradient)" opacity="0.3"/>
+    <circle cx="40" cy="40" r="15" fill="url(#featureGradient)"/>
+    <path d="M30 40 L50 40 M40 30 L40 50" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="35" cy="35" r="2" fill="#fff"/>
+    <circle cx="45" cy="35" r="2" fill="#fff"/>
+    <circle cx="35" cy="45" r="2" fill="#fff"/>
+    <circle cx="45" cy="45" r="2" fill="#fff"/>
+    <text x="40" y="90" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#4facfe">Extensible Rules</text>
+  </g>
+  
+  <!-- Production Ready -->
+  <g transform="translate(325, 180)">
+    <circle cx="40" cy="40" r="35" fill="url(#featureGradient)" opacity="0.1"/>
+    <circle cx="40" cy="40" r="25" fill="url(#featureGradient)" opacity="0.3"/>
+    <circle cx="40" cy="40" r="15" fill="url(#featureGradient)"/>
+    <path d="M35 35 L45 35 L45 45 L35 45 Z" fill="#fff"/>
+    <circle cx="40" cy="40" r="3" fill="#4facfe"/>
+    <text x="40" y="90" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#4facfe">Production Ready</text>
+  </g>
+</svg>

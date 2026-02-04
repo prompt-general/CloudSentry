@@ -1,0 +1,30 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="shieldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="cloudGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4facfe;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00f2fe;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Shield Shape -->
+  <path d="M100 20 L160 50 L160 120 Q160 160 100 180 Q40 160 40 120 L40 50 Z" 
+        fill="url(#shieldGradient)" stroke="#fff" stroke-width="3"/>
+  
+  <!-- Cloud Icon -->
+  <ellipse cx="100" cy="80" rx="25" ry="15" fill="url(#cloudGradient)" opacity="0.9"/>
+  <ellipse cx="85" cy="85" rx="20" ry="12" fill="url(#cloudGradient)" opacity="0.9"/>
+  <ellipse cx="115" cy="85" rx="20" ry="12" fill="url(#cloudGradient)" opacity="0.9"/>
+  
+  <!-- Sentry Eye -->
+  <circle cx="100" cy="120" r="15" fill="#fff" opacity="0.9"/>
+  <circle cx="100" cy="120" r="8" fill="#667eea"/>
+  <circle cx="102" cy="118" r="3" fill="#fff"/>
+  
+  <!-- Lightning Bolts -->
+  <path d="M70 100 L75 115 L70 115 L75 130" stroke="#ffd700" stroke-width="2" fill="none" opacity="0.8"/>
+  <path d="M125 100 L130 115 L125 115 L130 130" stroke="#ffd700" stroke-width="2" fill="none" opacity="0.8"/>
+</svg>
