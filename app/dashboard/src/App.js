@@ -55,6 +55,7 @@ const CloudProviderFilter = ({ cloudProvider, onCloudProviderChange }) => (
       <MenuItem value="all">All Clouds</MenuItem>
       <MenuItem value="aws">AWS</MenuItem>
       <MenuItem value="azure">Azure</MenuItem>
+      <MenuItem value="gcp">GCP</MenuItem>
     </Select>
   </FormControl>
 );
@@ -79,6 +80,57 @@ const CloudProviderBadge = ({ provider }) => {
     />
   );
 };
+
+// Add cloud provider summary component
+const CloudProviderSummary = ({ summary }) => (
+  <Grid container spacing={3} sx={{ mb: 4 }}>
+    <Grid item xs={12} md={3}>
+      <Card>
+        <CardContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <CloudIcon sx={{ mr: 1, color: '#FF9900' }} />
+            <Typography variant="h6" component="div">
+              AWS Findings
+            </Typography>
+          </Box>
+          <Typography variant="h4" component="div">
+            {summary?.by_cloud_provider?.aws || 0}
+          </Typography>
+        </CardContent>
+      </Card>
+    </Grid>
+    <Grid item xs={12} md={3}>
+      <Card>
+        <CardContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <CloudIcon sx={{ mr: 1, color: '#0078D4' }} />
+            <Typography variant="h6" component="div">
+              Azure Findings
+            </Typography>
+          </Box>
+          <Typography variant="h4" component="div">
+            {summary?.by_cloud_provider?.azure || 0}
+          </Typography>
+        </CardContent>
+      </Card>
+    </Grid>
+    <Grid item xs={12} md={3}>
+      <Card>
+        <CardContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <CloudIcon sx={{ mr: 1, color: '#34A853' }} />
+            <Typography variant="h6" component="div">
+              GCP Findings
+            </Typography>
+          </Box>
+          <Typography variant="h4" component="div">
+            {summary?.by_cloud_provider?.gcp || 0}
+          </Typography>
+        </CardContent>
+      </Card>
+    </Grid>
+  </Grid>
+);
 
 // Add account selector component
 function AccountSelector({ accounts, selectedAccounts, onAccountToggle }) {
@@ -321,7 +373,7 @@ function App() {
       </Box>
 
       {/* Cloud Provider Summary */}
-      <CloudProviderSummary />
+      <CloudProviderSummary summary={summary} />
 
       {/* Summary Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -520,6 +572,7 @@ function App() {
                 <MenuItem value="all">All Clouds</MenuItem>
                 <MenuItem value="aws">AWS</MenuItem>
                 <MenuItem value="azure">Azure</MenuItem>
+                <MenuItem value="gcp">GCP</MenuItem>
               </Select>
             </FormControl>
           </Grid>
