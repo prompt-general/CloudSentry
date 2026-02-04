@@ -13,6 +13,7 @@ from app.database import get_db, AsyncSessionLocal
 from app.api import rest, websocket
 from app.engine.event_ingestor import start_event_ingestor
 from app.engine.azure_event_ingestor import start_azure_event_ingestor
+from app.engine.gcp_event_ingestor import start_gcp_event_ingestor
 from app.scheduler.audit_scheduler import init_scheduler
 from app.security.middleware import (
     SecurityHeadersMiddleware,
@@ -71,6 +72,12 @@ async def lifespan(app: FastAPI):
         await start_azure_event_ingestor()
     else:
         logger.info("Azure event ingestion disabled")
+    
+    # Start GCP event ingestor if enabled
+    if settings.enable_gcp:
+        await start_gcp_event_ingestor()
+    else:
+        logger.info("GCP event ingestion disabled")
     
     # Start WebSocket manager
     from app.api.websocket import start_websocket_manager
