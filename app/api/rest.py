@@ -830,3 +830,38 @@ async def get_azure_subscriptions():
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error fetching Azure subscriptions"
         )
+
+
+@router.get("/gcp/projects")
+async def get_gcp_projects():
+    """Get GCP projects"""
+    try:
+        from google.cloud import resourcemanager_v3
+        
+        # Use application default credentials
+        import google.auth
+        credentials, project_id = google.auth.default()
+        
+        client = resourcemanager_v3.ProjectsClient(credentials=credentials)
+        
+        # List projects
+        request = resourcemanager_v3.ListProjectsRequest()
+        projects = list(client.list_projects(request))
+        
+        return [
+            {
+                "id": project.project_id,
+                "name": project.display_name,
+                "state": project.state.name,
+                "create_time": project.create_time.isoformat() if project.create_time else None
+            }
+            for project in projects
+            if project.state.name == "ACTIVE"
+        ]
+        
+    except Exception as e:
+        logger.error(f"Error fetching GCP projects: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error fetching GCP projects"
+        )
