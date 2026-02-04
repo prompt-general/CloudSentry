@@ -30,6 +30,12 @@ class Settings(BaseSettings):
     azure_storage_connection_string: Optional[str] = None
     azure_storage_container: str = "cloudsentry-checkpoints"
     
+    # GCP Configuration
+    gcp_project_id: Optional[str] = None
+    gcp_service_account_key: Optional[str] = None  # JSON string
+    gcp_pubsub_subscription_id: Optional[str] = None
+    gcp_audit_log_sink: Optional[str] = None
+    
     # Cloud Provider Enable/Disable
     enable_aws: bool = True
     enable_azure: bool = False
