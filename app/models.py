@@ -28,6 +28,9 @@ class Finding(Base):
     subscription_id = Column(String(100))
     tenant_id = Column(String(100))
     
+    # GCP-specific fields
+    project_id = Column(String(100))
+    
     def to_dict(self):
         result = {
             'id': str(self.id),
@@ -52,6 +55,10 @@ class Finding(Base):
             result['subscription_id'] = self.subscription_id
         if self.tenant_id:
             result['tenant_id'] = self.tenant_id
+        
+        # Add GCP-specific fields if present
+        if self.project_id:
+            result['project_id'] = self.project_id
             
         return result
 
@@ -75,6 +82,9 @@ class Event(Base):
     resource_group = Column(String(100))
     subscription_id = Column(String(100))
     tenant_id = Column(String(100))
+    
+    # GCP-specific fields
+    project_id = Column(String(100))
 
 class RuleMetadata(Base):
     __tablename__ = 'rules'
