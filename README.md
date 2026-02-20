@@ -127,7 +127,7 @@ CloudSentry provides enterprise-grade, real-time security auditing for multi-clo
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-org/cloudsentry.git
+git clone https://github.com/MasterCaleb254/cloudsentry.git
 cd cloudsentry
 
 # 2. Set up environment
